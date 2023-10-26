@@ -100,6 +100,11 @@ void media_controls::media_update()
 	m_updater.Update();
 }
 
+bool media_controls::get_enabled()
+{
+	return m_controls.IsEnabled();
+}
+
 void media_controls::set_type(winrt::Windows::Media::MediaPlaybackType type)
 {
 	m_updater.Type(type);

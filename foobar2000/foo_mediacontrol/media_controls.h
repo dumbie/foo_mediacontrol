@@ -10,6 +10,7 @@ public:
 	void status_stop();
 	void media_clear();
 	void media_update();
+	bool get_enabled();
 	void set_type(winrt::Windows::Media::MediaPlaybackType type);
 	void set_status(winrt::Windows::Media::MediaPlaybackStatus status);
 	void set_title(const std::wstring title);
