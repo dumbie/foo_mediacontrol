@@ -61,7 +61,7 @@ media_information::media_information(metadb_handle_ptr metadb_handle)
 	//Set track genres
 	m_genres.clear();
 	t_size genre_count = file_info.meta_get_count_by_name("genre");
-	for (int i = 0; i < genre_count; i++)
+	for (t_size i = 0; i < genre_count; i++)
 	{
 		m_genres.push_back(winrt::hstring(meta_to_wstring(file_info.meta_get("genre", i))));
 	}
@@ -80,7 +80,7 @@ media_information::media_information(metadb_handle_ptr metadb_handle)
 
 	abort_callback_dummy abort_callback;
 	album_art_extractor_instance_v2::ptr extractor = static_api_ptr_t<album_art_manager_v2>()->open(meta_items, art_identifiers, abort_callback);
-	for (int i = 0; i < art_identifiers.get_count(); i++)
+	for (t_size i = 0; i < art_identifiers.get_count(); i++)
 	{
 		if (extractor->query(art_identifiers[i], m_album_art, abort_callback))
 		{

@@ -9,6 +9,12 @@ class myinitquit : public initquit
 public:
 	void on_init()
 	{
+		//Change foobar2000 settings
+		auto configStore = fb2k::configStore::get();
+		configStore->setConfigInt("ui.appCommand.global", 1); //Enable: Process global system media key events
+		configStore->setConfigInt("core.useUVC", 0); //Disable: Integrate with Windows Universal Volume Control
+
+		//Initialize background tasks 
 		m_monitor_input = new monitor_input();
 		m_monitor_player = new monitor_player();
 		m_media_position = new media_position();
