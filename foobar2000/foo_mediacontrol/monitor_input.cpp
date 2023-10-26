@@ -5,6 +5,7 @@
 
 bool monitor_input::pretranslate_message(MSG* p_msg)
 {
+	//Block keyboard input when control is enabled
 	if (media_controls::controls().get_enabled())
 	{
 		if (p_msg->wParam == HSHELL_APPCOMMAND)
