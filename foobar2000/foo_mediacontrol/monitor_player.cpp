@@ -27,6 +27,7 @@ void monitor_player::on_playback_new_track(metadb_handle_ptr metadb_handle)
 		media_control.set_genres(media_info.get_genres());
 		media_control.set_track_number(media_info.get_track_number());
 		media_control.set_track_length(media_info.get_track_length());
+		media_control.set_position(0);
 		media_control.set_album_art(media_info.get_album_art());
 		media_control.media_update();
 
