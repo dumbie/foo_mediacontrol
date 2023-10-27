@@ -160,7 +160,7 @@ void media_controls::set_track_length(const double length)
 
 void media_controls::set_position(const double position)
 {
-	auto position_converted = winrt::Windows::Foundation::TimeSpan{ (long long)position * 10000000 };
+	auto position_converted = winrt::Windows::Foundation::TimeSpan{ (long long)round(position) * 10000000 };
 
 	m_timeline.Position(position_converted);
 
