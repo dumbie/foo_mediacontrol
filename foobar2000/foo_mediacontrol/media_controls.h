@@ -17,11 +17,11 @@ public:
 	void set_artist(const std::wstring artist);
 	void set_album_artist(const std::wstring album_artist);
 	void set_album(const std::wstring album);
-	void set_genres(std::vector<winrt::hstring>& genres);
+	void set_genres(const std::vector<winrt::hstring> genres);
 	void set_track_number(const int number);
 	void set_track_length(const double length);
 	void set_position(const double position);
-	void set_album_art(album_art_data::ptr data);
+	void set_album_art(const album_art_data::ptr art_data);
 	inline static media_controls& controls()
 	{
 		static media_controls controls;

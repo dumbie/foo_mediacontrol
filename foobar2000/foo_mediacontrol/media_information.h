@@ -30,7 +30,7 @@ public:
 		return m_album;
 	}
 
-	inline std::vector<winrt::hstring>& get_genres()
+	inline std::vector<winrt::hstring> get_genres()
 	{
 		return m_genres;
 	}
@@ -45,7 +45,7 @@ public:
 		return m_track_length;
 	}
 
-	inline album_art_data::ptr& get_album_art()
+	inline album_art_data::ptr get_album_art()
 	{
 		return m_album_art;
 	}

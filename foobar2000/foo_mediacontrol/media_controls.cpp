@@ -135,7 +135,7 @@ void media_controls::set_album(const std::wstring album)
 	m_properties.AlbumTitle(album);
 }
 
-void media_controls::set_genres(std::vector<winrt::hstring>& genres)
+void media_controls::set_genres(const std::vector<winrt::hstring> genres)
 {
 	m_properties.Genres().ReplaceAll(genres);
 }
@@ -167,18 +167,29 @@ void media_controls::set_position(const double position)
 	m_controls.UpdateTimelineProperties(m_timeline);
 }
 
-void media_controls::set_album_art(album_art_data::ptr data)
+void media_controls::set_album_art(const album_art_data::ptr art_data)
 {
-	if (data != nullptr)
+	//Check album art data
+	if (art_data == nullptr)
 	{
-		if (IStream* istream = SHCreateMemStream((const BYTE*)data->get_ptr(), data->get_size()))
-		{
-			winrt::Windows::Storage::Streams::IRandomAccessStream randomstream;
-			auto uuid = __uuidof(ABI::Windows::Storage::Streams::IRandomAccessStream);
-			if (CreateRandomAccessStreamOverStream(istream, BSOS_DEFAULT, uuid, (void**)&randomstream) == S_OK)
-			{
-				m_updater.Thumbnail(winrt::Windows::Storage::Streams::RandomAccessStreamReference::CreateFromStream(randomstream));
-			}
-		}
+		return;
 	}
+
+	//Create memory stream
+	CComPtr<IStream> istream = SHCreateMemStream((const BYTE*)art_data->get_ptr(), art_data->get_size());
+	if (!istream)
+	{
+		return;
+	}
+
+	//Create random access stream
+	winrt::Windows::Storage::Streams::IRandomAccessStream random_stream;
+	auto uuid = __uuidof(ABI::Windows::Storage::Streams::IRandomAccessStream);
+	if (CreateRandomAccessStreamOverStream(istream, BSOS_DEFAULT, uuid, (void**)&random_stream) != S_OK)
+	{
+		return;
+	}
+
+	//Set media thumbnail
+	m_updater.Thumbnail(winrt::Windows::Storage::Streams::RandomAccessStreamReference::CreateFromStream(random_stream));
 }

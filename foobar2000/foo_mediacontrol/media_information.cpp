@@ -58,8 +58,10 @@ media_information::media_information(metadb_handle_ptr metadb_handle)
 		m_track_number = meta_to_int(file_info.meta_get("tracknumber", 0));
 	}
 
-	//Set track genres
+	//Clear track genres
 	m_genres.clear();
+
+	//Set track genres
 	t_size genre_count = file_info.meta_get_count_by_name("genre");
 	for (t_size i = 0; i < genre_count; i++)
 	{
@@ -79,7 +81,7 @@ media_information::media_information(metadb_handle_ptr metadb_handle)
 	meta_items.add_item(metadb_handle);
 
 	abort_callback_dummy abort_callback;
-	album_art_extractor_instance_v2::ptr extractor = static_api_ptr_t<album_art_manager_v2>()->open(meta_items, art_identifiers, abort_callback);
+	album_art_extractor_instance_v2::ptr extractor = static_api_ptr_t<album_art_manager_v3>()->open(meta_items, art_identifiers, abort_callback);
 	for (t_size i = 0; i < art_identifiers.get_count(); i++)
 	{
 		if (extractor->query(art_identifiers[i], m_album_art, abort_callback))
