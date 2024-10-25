@@ -125,7 +125,7 @@ namespace pfc {
 
 		~alloc_simple() {delete[] m_data;}
 
-		void move_from(t_self & other) {
+		void move_from(t_self & other) noexcept {
 			delete[] m_data;
 			m_data = replace_null_t(other.m_data);
 			m_size = replace_null_t(other.m_size);

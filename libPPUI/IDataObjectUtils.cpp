@@ -50,9 +50,9 @@ HRESULT IDataObjectUtils::DataBlockToSTGMEDIUM(const void * blockPtr, t_size blo
 			}
 			return DV_E_TYMED;
 		}
-	} catch(pfc::exception_not_implemented) {
+	} catch(pfc::exception_not_implemented const &) {
 		return E_NOTIMPL;
-	} catch(std::bad_alloc) {
+	} catch(std::bad_alloc const &) {
 		return E_OUTOFMEMORY;
 	} catch(...) {
 		return E_UNEXPECTED;

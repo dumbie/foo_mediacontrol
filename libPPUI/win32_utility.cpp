@@ -173,6 +173,17 @@ void InjectParentEraseHandler(HWND wnd) {
 void InjectParentCtlColorHandler(HWND wnd) {
 	WIN32_OP_D(SetWindowSubclass(wnd, CtlColorProc, 0, 0));
 }
+static LRESULT CALLBACK BounceNextDlgCtlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
+	if (uMsg == WM_NEXTDLGCTL) {
+		return ::SendMessage((HWND)dwRefData, uMsg, wParam, lParam);
+	}
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+void BounceNextDlgCtl(HWND wnd, HWND wndTo) {
+	::SetWindowSubclass(wnd, BounceNextDlgCtlProc, 0, (DWORD_PTR)wndTo);
+}
+
 
 pfc::string8 EscapeTooltipText(const char * src)
 {
@@ -237,7 +248,7 @@ static void GetOSVersionStringAppend(pfc::string_base & out) {
 	if (FetchWineInfoAppend(out)) return;
 
 	OSVERSIONINFO ver = {}; ver.dwOSVersionInfoSize = sizeof(ver);
-	WIN32_OP(GetVersionEx(&ver));
+	WIN32_OP_D(GetVersionEx(&ver));
 	SYSTEM_INFO info = {};
 	GetNativeSystemInfo(&info);
 
@@ -347,4 +358,33 @@ void PP::hookWindowMessages(HWND wnd, CMessageMap* target, DWORD targetID, std::
 }
 void PP::hookWindowMessages(HWND wnd, messageHook_t h) {
 	PP::subclassThisWindow< CWindowHook_Proc >(wnd, h);
+}
+
+namespace PP {
+	static LONG regReadHelper(HKEY root, const wchar_t* path, const wchar_t* value, LONG def) {
+		wchar_t buf[64] = {};
+		DWORD cb = (DWORD)((std::size(buf) - 1) * sizeof(buf[0]));
+		if (RegGetValue(root, path, value, RRF_RT_REG_SZ, NULL, buf, &cb) == 0) {
+			return _wtol(buf);
+		}
+		return def;
+	}
+
+	static SIZE querySystemDragThreshold() {
+		constexpr DWORD def = 1;
+		static constexpr wchar_t path[] = L"Control Panel\\Desktop";
+		return {
+			(LONG)regReadHelper(HKEY_CURRENT_USER, path, L"DragWidth", def),
+			(LONG)regReadHelper(HKEY_CURRENT_USER, path, L"DragHeight", def)
+		};
+	}
+	SIZE queryDragThresholdForDPI(SIZE dpi) {
+		PFC_ASSERT(dpi.cx > 0 && dpi.cy > 0);
+		static SIZE sys = {};
+		if ( sys.cx == 0 || sys.cy == 0 ) sys = querySystemDragThreshold();
+		return { MulDiv(sys.cx, dpi.cx, 96), MulDiv(sys.cy, dpi.cy, 96) };
+	}
+	SIZE queryDragThreshold(HWND wndFor) {
+		return queryDragThresholdForDPI(QueryScreenDPIEx(wndFor));
+	}
 }

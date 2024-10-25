@@ -138,22 +138,27 @@ size_t utf8_encode_char(unsigned wide, char * target) noexcept
 		target[5] = 0x80 | (wide & 0x3F);
 		wide = wide >> 6;
 		wide |= 0x4000000;
+		[[fallthrough]];
 	case 5:
 		target[4] = 0x80 | (wide & 0x3F);
 		wide = wide >> 6;
 		wide |= 0x200000;
+		[[fallthrough]];
 	case 4:
 		target[3] = 0x80 | (wide & 0x3F);
 		wide = wide >> 6;
 		wide |= 0x10000;
+		[[fallthrough]];
 	case 3:
 		target[2] = 0x80 | (wide & 0x3F);
 		wide = wide >> 6;
 		wide |= 0x800;
+		[[fallthrough]];
 	case 2:
 		target[1] = 0x80 | (wide & 0x3F);
 		wide = wide >> 6;
 		wide |= 0xC0;
+		[[fallthrough]];
 	case 1:
 		target[0] = wide & 0xFF;
 	}

@@ -125,8 +125,7 @@ namespace pfc {
         pfc::array_t< pollfd > v;
         v.set_size_discard( count );
         size_t walk = 0;
-        for( auto i = total.m_fds.begin(); i != total.m_fds.end(); ++ i ) {
-            const int fd = *i;
+        for( auto fd : total.m_fds) {
             auto & f = v[walk++];
             f.fd = fd;
             f.events = (Reads[fd] ? POLLIN : 0) | (Writes[fd] ? POLLOUT : 0);
@@ -166,19 +165,47 @@ namespace pfc {
                 if (f.revents & POLLOUT) Writes += f.fd;
                 if (f.revents & POLLERR) Errors += f.fd;
             }
+            PFC_ASSERT( !Reads.m_fds.empty() || !Writes.m_fds.empty() || !Errors.m_fds.empty() );
         }
         
         return status;
     }
     
-    bool fdCanRead( int fd ) {
-        return fdWaitRead( fd, 0 );
+    inline bool fdCanRead_select( int fdRead ) {
+        PFC_ASSERT( fdRead < FD_SETSIZE );
+        timeval tv = {};
+        fd_set set;
+        FD_ZERO(&set);
+        FD_SET(fdRead, &set);
+        
+        return select(fdRead + 1, &set, nullptr, nullptr, &tv) > 0;
     }
+    inline bool fdCanRead_poll(int fdRead) {
+        pollfd arg = {fdRead, POLLIN };
+        poll(&arg, 1, 0);
+        return (arg.revents & POLLIN) != 0;
+    }
+
+    bool fdCanRead( int fdRead ) {
+        if ( fdRead < 0 ) {
+            PFC_ASSERT( !"???" );
+            return false;
+        }
+    #ifdef __APPLE__
+        // BROKEN extremely inefficient implementation of poll() on Apple systems, avoid if possible
+        if ( fdRead < FD_SETSIZE ) {
+            return fdCanRead_select( fdRead );
+        }
+    #endif
+        return fdCanRead_poll(fdRead);
+    }
+
     bool fdCanWrite( int fd ) {
         return fdWaitWrite( fd, 0 );
     }
     
     bool fdWaitRead( int fd, double timeOutSeconds ) {
+        if ( timeOutSeconds == 0 ) return fdCanRead( fd );
         fdSelect sel; sel.Reads += fd;
         return sel.Select( timeOutSeconds ) > 0;
     }
@@ -216,6 +243,9 @@ namespace pfc {
     
     bool nix_event::wait_for( double p_timeout_seconds ) {
         return fdWaitRead( m_fd[0], p_timeout_seconds );
+    }
+    bool nix_event::is_set() {
+        return fdCanRead(m_fd[0]);
     }
     bool nix_event::g_wait_for( int p_event, double p_timeout_seconds ) {
         return fdWaitRead( p_event, p_timeout_seconds );
@@ -300,14 +330,16 @@ namespace pfc {
 #endif
     }
 
+    static int openDevRand() {
+        int ret = open("/dev/urandom", O_RDONLY);
+        if ( ret < 0 ) throw exception_nix();
+        return ret;
+    }
     void nixGetRandomData( void * outPtr, size_t outBytes ) {
 		try {
-			fileHandle randomData;
-			randomData = open("/dev/urandom", O_RDONLY);
-			if (randomData.h < 0) throw exception_nix();
+            static fileHandle randomData = openDevRand();
 			if (read(randomData.h, outPtr, outBytes) != outBytes) throw exception_nix();
-		}
-		catch (std::exception const & e) {
+		} catch (std::exception const & e) {
 			throw std::runtime_error("getRandomData failure");
 		}
     }

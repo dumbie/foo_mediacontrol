@@ -7,11 +7,16 @@
 #endif
 
 namespace pfc {
+    void debugBreak();
     [[noreturn]] void crash();
     [[noreturn]] void crashWithMessageOnStack( const char * msg );
     void outputDebugLine(const char * msg);
     
-	// Debug logger service.
+#ifdef __APPLE__
+    [[noreturn]] void appleThrowException( const char * name, const char * reason );
+#endif
+
+    // Debug logger service.
 	// It is up to the caller to ensure thread safety. You want to create debugLineReceiver instances on app startup and never destroy them.
 	class debugLineReceiver {
 	public:

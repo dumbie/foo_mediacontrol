@@ -6,7 +6,7 @@
 #endif
 
 namespace pfc {
-void fileHandleClose( fileHandle_t h ) {
+void fileHandleClose( fileHandle_t h ) noexcept {
     if (h == fileHandleInvalid) return;
 #ifdef _WIN32
     CloseHandle( h );
@@ -26,7 +26,7 @@ fileHandle_t fileHandleDup( fileHandle_t h ) {
 #endif
 }
 
-void fileHandle::close() {
+void fileHandle::close() noexcept {
     fileHandleClose( h );
     clear();
 }

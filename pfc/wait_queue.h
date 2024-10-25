@@ -98,7 +98,7 @@ namespace pfc {
 			return m_canWrite.get_handle();
 		}
 
-		waitQueue2() : m_eof() {
+		waitQueue2() {
 			m_canWrite.set_state(true);
 		}
 
@@ -133,6 +133,38 @@ namespace pfc {
 			}
 		}
 
+		typedef std::function<bool(obj_t&)> receive_peek_t;
+		// Block until there's something to return + return multiple objects at once.
+		// Use peek function (optional) to stop reading / leave remaining items for the next call to pick up.
+		std::list<obj_t> receive(pfc::eventHandle_t hAbort, receive_peek_t peek = nullptr , bool* didAbort = nullptr) {
+			if (didAbort != nullptr) *didAbort = false;
+			std::list<obj_t> ret;
+			for (bool retry = false; ; retry = true ) {
+				// try without wait first, only place where this is really used can poll abort before/after without system calls
+				if (retry && pfc::event::g_twoEventWait(hAbort, m_canRead.get_handle(), -1) == 1) {
+					if (didAbort != nullptr) *didAbort = true;
+					break;
+				}
+				mutexScope guard(m_mutex);
+				auto i = m_list.begin();
+				if (i == m_list.end()) {
+					if (m_eof) break;
+					continue;
+				}
+				bool bDidGet = false;
+				do {
+					if (peek && !peek(*i)) break;
+					auto n = i; ++n;
+					ret.splice(ret.end(), m_list, i);
+					i = std::move(n);
+					bDidGet = true;
+				} while (i != m_list.end());
+				if ( bDidGet ) didGet();
+				break;
+			}
+			return ret;
+		}
+
 		bool get(obj_t & out, pfc::eventHandle_t hAbort, bool * didAbort = nullptr) {
 			if (didAbort != nullptr) * didAbort = false;
 			for (;; ) {
@@ -162,8 +194,9 @@ namespace pfc {
 		}
 	private:
 		void didGet() {
+            // mutex assumed locked
 			if (m_eof) return;
-			if (m_list.size() == 0) {
+			if (m_list.empty()) {
 				m_canRead.set_state(false);
 				m_canWrite.set_state(true);
 			} else {
@@ -171,9 +204,10 @@ namespace pfc {
 			}
 		}
 		void refreshCanWrite() {
+            // mutex assumed locked
 			m_canWrite.set_state( !m_eof && canWriteCheck(m_list));
 		}
-		bool m_eof;
+		bool m_eof = false;
 		std::list<obj_t> m_list;
 		mutex m_mutex;
 		event m_canRead, m_canWrite;

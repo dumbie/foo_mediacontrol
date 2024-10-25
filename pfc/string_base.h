@@ -16,7 +16,6 @@ namespace pfc {
 	bool is_lower_ascii(const char * param);
 	bool is_multiline(const char * p_string,t_size p_len = SIZE_MAX);
 	bool has_path_bad_chars(const char * param);
-	void recover_invalid_utf8(const char * src,char * out,unsigned replace);//out must be enough to hold strlen(char) + 1, or appropiately bigger if replace needs multiple chars
 	void convert_to_lower_ascii(const char * src,t_size max,char * out,char replace = '?');//out should be at least strlen(src)+1 long
 
 	template<typename char_t> inline char_t ascii_tolower(char_t c) {if (c >= 'A' && c <= 'Z') c += 'a' - 'A'; return c;}
@@ -107,7 +106,23 @@ namespace pfc {
 	t_size wide_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_source_length = SIZE_MAX) noexcept;
 	t_size wide_encode_char(unsigned c,wchar_t * out) noexcept;
 
+    size_t uni_char_length(const char *);
+    size_t uni_char_length(const char16_t *);
+    size_t uni_char_length(const wchar_t *);
+    
+    size_t uni_decode_char(const char16_t * p_source, unsigned & p_out, size_t p_source_length = SIZE_MAX) noexcept;
+    size_t uni_decode_char(const char * p_source, unsigned & p_out, size_t p_source_length = SIZE_MAX) noexcept;
+    size_t uni_decode_char(const wchar_t * p_source, unsigned & p_out, size_t p_source_length = SIZE_MAX) noexcept;
 
+	size_t uni_encode_char(unsigned c, char* out) noexcept;
+	size_t uni_encode_char(unsigned c, char16_t* out) noexcept;
+	size_t uni_encode_char(unsigned c, wchar_t* out) noexcept;
+
+#ifdef __cpp_char8_t
+	inline size_t uni_char_length(const char8_t* arg) { return uni_char_length(reinterpret_cast<const char*>(arg)); }
+	inline size_t uni_decode_char(const char8_t* p_source, unsigned& p_out, size_t p_source_length = SIZE_MAX) noexcept { return uni_decode_char(reinterpret_cast<const char*>(p_source), p_out, p_source_length); }
+	inline size_t uni_encode_char(unsigned c, char8_t* out) noexcept { return uni_encode_char(c, reinterpret_cast<char*>(out)); }
+#endif
 	t_size strstr_ex(const char * p_string,t_size p_string_len,const char * p_substring,t_size p_substring_len) noexcept;
 
 
@@ -215,6 +230,8 @@ namespace pfc {
 	string8 string_filename_ext(const char * fn);
 
     const char * filename_ext_v2 ( const char * fn, char slash = 0 );
+    string8 remove_ext_v2( const char * fileNameDotExt ); // Just removes extension, assumes argument to hold just filename.ext, not whole path
+    const char * extract_ext_v2( const char * fileNameDotExt ); // Just extracts extension, assumes argument to hold just filename.ext, not whole path
 
 	size_t find_extension_offset(const char * src);
 	string8 string_extension(const char * src);
@@ -413,4 +430,9 @@ namespace pfc {
 	}
 
 	pfc::string8 prefixLines(const char* str, const char* prefix, const char * setEOL = "\n");
+
+
+	pfc::string8 recover_invalid_utf8(const char* in, const char* subst = "_");
+
+	pfc::string8 string_trim_spacing(const char* in);
 }

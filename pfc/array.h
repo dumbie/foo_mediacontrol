@@ -159,7 +159,7 @@ namespace pfc {
 				try {
 					set_size(walk);
 					return;
-				} catch(std::bad_alloc) {
+				} catch(std::bad_alloc const &) {
 					if (walk <= minSize) throw;
 					// go on
 				}

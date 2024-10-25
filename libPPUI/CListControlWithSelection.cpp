@@ -304,9 +304,14 @@ LRESULT CListControlWithSelectionBase::OnRButtonUp(UINT,WPARAM,LPARAM,BOOL& bHan
 	return 0;
 }
 
+bool CListControlWithSelectionBase::ShouldBeginDrag(CPoint ptRef, CPoint ptNow) const {
+	auto threshold = PP::queryDragThresholdForDPI(this->GetDPI());
+	return abs(ptNow.x - ptRef.x) > threshold.cx || abs(ptNow.y - ptRef.y) > threshold.cy;
+}
+
 LRESULT CListControlWithSelectionBase::OnMouseMove(UINT,WPARAM,LPARAM p_lp,BOOL&) {
 	if (m_prepareDragDropMode) {
-		if (CPoint(p_lp) != m_prepareDragDropOrigin) {
+		if (ShouldBeginDrag(m_prepareDragDropOrigin, CPoint(p_lp))) {
 			AbortPrepareDragDropMode();
 			if (!m_ownDDActive) {
 				pfc::vartoggle_t<bool> ownDD(m_ownDDActive,true);
@@ -526,7 +531,7 @@ static HRGN FrameRectRgn(const CRect & rect) {
 
 void CListControlWithSelectionBase::HandleDragSel(const CPoint & p_pt) {
 	const CPoint pt = PointClientToAbs(p_pt);
-	if (pt != m_selectDragCurrentAbs) {
+	if (m_selectDragMoved || ShouldBeginDrag(m_selectDragCurrentAbs, pt)) {
 
 		if (!this->AllowRangeSelect()) {
 			// simplified
@@ -1541,6 +1546,7 @@ int CListControlWithSelectionBase::OnCreatePassThru(LPCREATESTRUCT) {
 			return dda->dwEFfect;
 		};
 		target->HookDrop = [this, flags] ( IDataObject * obj, CPoint pt ) {
+			this->ToggleDDScroll(false);
 			this->ClearDropMark();
 			if ( this->m_ownDDActive ) {
 				// Do not generate OnDrop for reorderings

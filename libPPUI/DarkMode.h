@@ -13,6 +13,7 @@ namespace DarkMode {
 	// Darken window title bar
 	void UpdateTitleBar(HWND wnd, bool bDark );
 	void ApplyDarkThemeCtrl(HWND ctrl, bool bDark, const wchar_t * ThemeID = L"Explorer");
+	void ApplyDarkThemeCtrl2(HWND ctrl, bool bDark, const wchar_t* ThemeID_light = L"Explorer", const wchar_t* ThemeID_dark = L"DarkMode_Explorer");
 	void AllowDarkModeForWindow(HWND wnd, bool bDark);
 
 	// One-shot version of darkening function for editboxes

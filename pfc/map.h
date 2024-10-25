@@ -40,6 +40,9 @@ namespace pfc {
 			return m_data.have_item(t_search_query<_t_key>(p_key));
 		}
 
+		template<typename key_t>
+		bool contains(key_t const& arg) const { return have_item(arg); }
+
 		template<typename _t_key,typename _t_value>
 		bool query(const _t_key & p_key,_t_value & p_value) const {
 			const t_storage * storage = m_data.find_ptr(t_search_query<_t_key>(p_key));
@@ -135,8 +138,10 @@ namespace pfc {
 
 
 		t_size get_count() const throw() {return m_data.get_count();}
+		size_t size() const throw() { return get_count(); }
 
 		void remove_all() throw() {m_data.remove_all();}
+		void clear() throw() { remove_all(); }
 
 		template<typename t_source>
 		void overwrite(const t_source & p_source) {

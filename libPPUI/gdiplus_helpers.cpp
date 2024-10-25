@@ -32,22 +32,22 @@ HBITMAP GdiplusLoadBitmap(UINT id, const TCHAR* resType, CSize size) {
 		auto stream = WinLoadResourceAsStream(GetThisModuleHandle(), MAKEINTRESOURCE(id), resType);
 
 		GdiplusErrorHandler EH;
-		std::unique_ptr<Image> source ( new Image(stream) );
-		EH << source->GetLastStatus();
+		Image source ( stream );
+		EH << source.GetLastStatus();
 
-		std::unique_ptr<Bitmap> resized ( new Bitmap(size.cx, size.cy, PixelFormat32bppARGB) );
-		EH << resized->GetLastStatus();
+		Bitmap resized (size.cx, size.cy, PixelFormat32bppARGB);
+		EH << resized.GetLastStatus();
 
 		{
-			std::unique_ptr<Graphics> target ( new Graphics(resized.get()) );
-			EH << target->GetLastStatus();
-			EH << target->SetInterpolationMode(InterpolationModeHighQuality);
-			EH << target->Clear(Color(0, 0, 0, 0));
-			EH << target->DrawImage(source.get(), Rect(0, 0, size.cx, size.cy));
+			Graphics target(&resized);
+			EH << target.GetLastStatus();
+			EH << target.SetInterpolationMode(InterpolationModeHighQuality);
+			EH << target.Clear(Color(0, 0, 0, 0));
+			EH << target.DrawImage(&source, Rect(0, 0, size.cx, size.cy));
 		}
 
 		HBITMAP bmp = NULL;
-		EH << resized->GetHBITMAP(Gdiplus::Color::White, &bmp);
+		EH << resized.GetHBITMAP(Gdiplus::Color::White, &bmp);
 		return bmp;
 	} catch (...) {
 		PFC_ASSERT(!"Should not get here");
@@ -73,11 +73,11 @@ std::unique_ptr< Gdiplus::Bitmap > GdiplusResizeImage(Gdiplus::Image* source, CS
 	GdiplusErrorHandler EH;
 	std::unique_ptr<Bitmap> resized ( new Bitmap(size.cx, size.cy, pf) );
 	EH << resized->GetLastStatus();
-	std::unique_ptr<Graphics> target ( new Graphics(resized.get()) );
-	EH << target->GetLastStatus();
-	EH << target->SetInterpolationMode(InterpolationModeHighQuality);
-	EH << target->Clear(Color(0, 0, 0, 0));
-	EH << target->DrawImage(source, Rect(0, 0, size.cx, size.cy));
+	Graphics target (resized.get() );
+	EH << target.GetLastStatus();
+	EH << target.SetInterpolationMode(InterpolationModeHighQuality);
+	EH << target.Clear(Color(0, 0, 0, 0));
+	EH << target.DrawImage(source, Rect(0, 0, size.cx, size.cy));
 	return resized;
 }
 
@@ -108,26 +108,26 @@ HICON GdiplusLoadIconEx(UINT id, const TCHAR* resType, GdiplusIconArg_t const& a
 		auto stream = WinLoadResourceAsStream(GetThisModuleHandle(), MAKEINTRESOURCE(id), resType);
 
 		GdiplusErrorHandler EH;
-		pfc::ptrholder_t<Image> source = new Image(stream);
 
-		EH << source->GetLastStatus();
-		pfc::ptrholder_t<Bitmap> resized = new Bitmap(arg.size.cx, arg.size.cy, PixelFormat32bppARGB);
-		EH << resized->GetLastStatus();
+		Bitmap resized(arg.size.cx, arg.size.cy, PixelFormat32bppARGB);
+		EH << resized.GetLastStatus();
 		
 		{
-			pfc::ptrholder_t<Graphics> target = new Graphics(resized.get_ptr());
-			EH << target->GetLastStatus();
-			EH << target->SetInterpolationMode(InterpolationModeHighQuality);
-			EH << target->Clear(Color(0, 0, 0, 0));
-			EH << target->DrawImage(source.get_ptr(), Rect(0, 0, arg.size.cx, arg.size.cy));
+			Image source(stream);
+			EH << source.GetLastStatus();
+
+			Graphics target(&resized);
+			EH << target.GetLastStatus();
+			EH << target.SetInterpolationMode(InterpolationModeHighQuality);
+			EH << target.Clear(Color(0, 0, 0, 0));
+			EH << target.DrawImage(&source, Rect(0, 0, arg.size.cx, arg.size.cy));
 		}
 
-		source = nullptr;
 
-		if (arg.transform) arg.transform(resized.get_ptr());
+		if (arg.transform) arg.transform(&resized);
 
 		HICON icon = NULL;
-		EH << resized->GetHICON(&icon);
+		EH << resized.GetHICON(&icon);
 		return icon;
 	} catch (...) {
 		PFC_ASSERT(!"Should not get here");

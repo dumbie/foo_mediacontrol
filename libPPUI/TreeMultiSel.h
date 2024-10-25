@@ -159,9 +159,9 @@ private:
 		} else if (m_selection.size() > 0) {
 			CTreeViewCtrl tree(hdr->hwndFrom);
 			CRgn rgn; rgn.CreateRectRgn(0,0,0,0);
-			for(auto walk = m_selection.begin(); walk != m_selection.end(); ++walk) {
+			for(auto walk : m_selection) {
 				CRect rc;
-				if (tree.GetItemRect(*walk, rc, TRUE)) {
+				if (tree.GetItemRect(walk, rc, TRUE)) {
 					CRgn temp; temp.CreateRectRgnIndirect(rc);
 					rgn.CombineRgn(temp, RGN_OR);
 				}				
@@ -198,6 +198,29 @@ private:
 		SetMsgHandled(FALSE);
 		return 0;
 	}
+	
+	void FixFocusItem(CTreeViewCtrl tree, HTREEITEM item) {
+		if (this->IsItemSelected(item) || tree.GetSelectedItem() != item) return;
+
+		auto scope = pfc::autoToggle(m_ownSelChange, true);
+		
+		for(;;) {
+			if (item == TVI_ROOT || item == NULL || this->IsItemSelected(item)) {
+				tree.SelectItem(item); return;
+			}
+			for (auto walk = tree.GetPrevSiblingItem(item); walk != NULL; walk = tree.GetPrevSiblingItem(walk)) {
+				if (this->IsItemSelected(walk)) {
+					tree.SelectItem(walk); return;
+				}
+			}
+			for (auto walk = tree.GetNextSiblingItem(item); walk != NULL; walk = tree.GetNextSiblingItem(walk)) {
+				if (this->IsItemSelected(walk)) {
+					tree.SelectItem(walk); return;
+				}
+			}
+			item = tree.GetParentItem(item);
+		}
+	}
 
 	BOOL HandleClick(CTreeViewCtrl tree, CPoint pt) {
 		UINT htFlags = 0;
@@ -205,6 +228,7 @@ private:
 		if (item != NULL && (htFlags & TVHT_ONITEM) != 0) {
 			if (IsKeyPressed(VK_CONTROL)) {
 				SelectToggleItem(tree, item);
+				FixFocusItem(tree, item);
 				return TRUE;
 			} else if (item == tree.GetSelectedItem() && !IsItemSelected(item)) {
 				SelectToggleItem(tree, item);
@@ -252,7 +276,7 @@ private:
 		}
 
 		selection_t newSel = GrabRange(tree, m_selStart, item );
-		ApplySelection(tree, newSel);
+		ApplySelection(tree, std::move(newSel));
 	}
 	static selection_t GrabRange(CTreeViewCtrl tree, HTREEITEM item1, HTREEITEM item2) {
 		selection_t range1, range2;
@@ -292,6 +316,7 @@ private:
 		NMTVCUSTOMDRAW* info = (NMTVCUSTOMDRAW*)hdr;
 		switch (info->nmcd.dwDrawStage) {
 		case CDDS_ITEMPREPAINT:
+			// NOTE: This doesn't work all the way. Unflagging CDIS_FOCUS isn't respected, causing weird behaviors when using ctrl+cursors or unselecting items.
 			if (this->IsItemSelected((HTREEITEM)info->nmcd.dwItemSpec)) {
 				info->nmcd.uItemState |= CDIS_SELECTED;
 			} else {
@@ -311,7 +336,7 @@ public:
 		DeselectAll(tree); SelectItem(tree, item);
 	}
 
-	void ApplySelection(CTreeViewCtrl tree, selection_t const & newSel) {
+	void ApplySelection(CTreeViewCtrl tree, selection_t && newSel) {
 		CRgn updateRgn;
 		bool changed = false;
 		if (newSel.size() != m_selection.size() && newSel.size() + m_selection.size() > 100) {
@@ -319,21 +344,21 @@ public:
 			changed = true;
 		} else {
 			WIN32_OP_D(updateRgn.CreateRectRgn(0, 0, 0, 0) != NULL);
-			for (auto walk = m_selection.begin(); walk != m_selection.end(); ++walk) {
-				if (newSel.count(*walk) == 0) {
+			for (auto walk : m_selection) {
+				if (newSel.count(walk) == 0) {
 					changed = true;
 					CRect rc;
-					if (tree.GetItemRect(*walk, rc, TRUE)) {
+					if (tree.GetItemRect(walk, rc, TRUE)) {
 						CRgn temp; WIN32_OP_D(temp.CreateRectRgnIndirect(rc));
 						WIN32_OP_D(updateRgn.CombineRgn(temp, RGN_OR) != ERROR);
 					}
 				}
 			}
-			for (auto walk = newSel.begin(); walk != newSel.end(); ++walk) {
-				if (m_selection.count(*walk) == 0) {
+			for (auto walk : newSel) {
+				if (m_selection.count(walk) == 0) {
 					changed = true;
 					CRect rc;
-					if (tree.GetItemRect(*walk, rc, TRUE)) {
+					if (tree.GetItemRect(walk, rc, TRUE)) {
 						CRgn temp; WIN32_OP_D(temp.CreateRectRgnIndirect(rc));
 						WIN32_OP_D(updateRgn.CombineRgn(temp, RGN_OR) != ERROR);
 					}
@@ -341,7 +366,7 @@ public:
 			}
 		}
 		if (changed) {
-			m_selection = newSel;
+			m_selection = std::move(newSel);
 			tree.RedrawWindow(NULL, updateRgn);
 			SendOnSelChanged(tree);
 		}
@@ -363,9 +388,9 @@ public:
 		CRgn updateRgn; 
 		if (m_selection.size() <= 100) {
 			WIN32_OP_D(updateRgn.CreateRectRgn(0, 0, 0, 0) != NULL);
-			for (auto walk = m_selection.begin(); walk != m_selection.end(); ++walk) {
+			for (auto walk : m_selection) {
 				CRect rc;
-				if (tree.GetItemRect(*walk, rc, TRUE)) {
+				if (tree.GetItemRect(walk, rc, TRUE)) {
 					CRgn temp; WIN32_OP_D(temp.CreateRectRgnIndirect(rc));
 					WIN32_OP_D(updateRgn.CombineRgn(temp, RGN_OR) != ERROR);
 				}

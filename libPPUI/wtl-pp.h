@@ -73,6 +73,9 @@ LRESULT RelayEraseBkgnd(HWND p_from, HWND p_to, HDC p_dc);
 void InjectParentEraseHandler(HWND);
 void InjectEraseHandler(HWND, HWND sendTo);
 void InjectParentCtlColorHandler(HWND);
+void BounceNextDlgCtl(HWND wnd, HWND wndTo);
+
+
 
 #define MSG_WM_ERASEBKGND_PARENT() \
 	if (uMsg == WM_ERASEBKGND) { \

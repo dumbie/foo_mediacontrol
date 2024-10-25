@@ -18,7 +18,7 @@ namespace pfc {
 
     t_size wide_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_source_length) throw() {
         PFC_STATIC_ASSERT( sizeof( wchar_t ) == sizeof( char16_t ) || sizeof( wchar_t ) == sizeof( unsigned ) );
-        if (sizeof( wchar_t ) == sizeof( char16_t ) ) {
+        if constexpr (sizeof( wchar_t ) == sizeof( char16_t ) ) {
             return utf16_decode_char( reinterpret_cast< const char16_t *>(p_source), p_out, p_source_length );
         } else {
             if (p_source_length == 0) { * p_out = 0; return 0; }
@@ -28,7 +28,7 @@ namespace pfc {
     }
 	t_size wide_encode_char(unsigned c,wchar_t * out) throw() {
         PFC_STATIC_ASSERT( sizeof( wchar_t ) == sizeof( char16_t ) || sizeof( wchar_t ) == sizeof( unsigned ) );
-        if (sizeof( wchar_t ) == sizeof( char16_t ) ) {
+        if constexpr (sizeof( wchar_t ) == sizeof( char16_t ) ) {
             return utf16_encode_char( c, reinterpret_cast< char16_t * >(out) );
         } else {
             * out = (wchar_t) c;
@@ -36,6 +36,58 @@ namespace pfc {
         }
     }
 
+    size_t uni_decode_char(const char16_t * p_source, unsigned & p_out, size_t p_source_length) noexcept {
+        return utf16_decode_char(p_source, &p_out, p_source_length);
+    }
+    size_t uni_decode_char(const char * p_source, unsigned & p_out, size_t p_source_length) noexcept {
+        return utf8_decode_char(p_source, p_out, p_source_length);
+    }
+    size_t uni_decode_char(const wchar_t * p_source, unsigned & p_out, size_t p_source_length) noexcept {
+        if constexpr ( sizeof(wchar_t) == sizeof(char16_t)) {
+            return utf16_decode_char( reinterpret_cast<const char16_t*>(p_source), &p_out, p_source_length);
+        } else {
+            if (p_source_length > 0) {
+                unsigned c = (unsigned)*p_source;
+                if (c != 0) {
+                    p_out = c; return 1;
+                }
+            }
+            p_out = 0; return 0;
+        }
+    }
+
+    size_t uni_char_length(const char * arg) {
+        return utf8_char_len(arg);
+    }
+    size_t uni_char_length(const char16_t * arg) {
+        unsigned dontcare;
+        return utf16_decode_char(arg, &dontcare);
+    }
+    size_t uni_char_length(const wchar_t * arg) {
+        if constexpr ( sizeof(wchar_t) == sizeof(char16_t) ) {
+            unsigned dontcare;
+            return utf16_decode_char(reinterpret_cast<const char16_t*>(arg), &dontcare);
+        } else {
+            return *arg == 0 ? 0 : 1;
+        }
+    }
+    
+    size_t uni_encode_char(unsigned c, char* out) noexcept {
+        PFC_ASSERT(c != 0);
+        return utf8_encode_char(c, out);
+    }
+    size_t uni_encode_char(unsigned c, char16_t* out) noexcept {
+        PFC_ASSERT(c != 0);
+        return utf16_encode_char(c, out);
+    }
+    size_t uni_encode_char(unsigned c, wchar_t* out) noexcept {
+        PFC_ASSERT(c != 0);
+        if constexpr ( sizeof(wchar_t) == sizeof(char16_t)) {
+            return utf16_encode_char(c, reinterpret_cast<char16_t*>(out));
+        } else {
+            *out = c; return 1;
+        }
+    }
 
 
 bool is_lower_ascii(const char * param)

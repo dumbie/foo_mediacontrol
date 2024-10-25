@@ -138,7 +138,9 @@ public:
 
 	//! Returns true when signaled, false on timeout
 	bool wait_for(double p_timeout_seconds) {return g_wait_for(get(),p_timeout_seconds);}
-	
+    void wait() { wait_for(-1); }
+    void wait_and_clear() { wait(); set_state(false); }
+    
 	static DWORD g_calculate_wait_time(double p_seconds);
 
 	//! Returns true when signaled, false on timeout

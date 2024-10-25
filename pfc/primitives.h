@@ -469,22 +469,12 @@ namespace pfc {
 		}
 	}
 
-	
-
-	template<typename t_array,typename T>
-	inline t_size append_t(t_array & p_array,const T & p_item)
-	{
-		t_size old_count = p_array.get_size();
-		p_array.set_size(old_count + 1);
-		p_array[old_count] = p_item;
-		return old_count;
-	}
 	template<typename t_array, typename T>
 	inline t_size append_t(t_array & p_array, T && p_item)
 	{
 		t_size old_count = p_array.get_size();
 		p_array.set_size(old_count + 1);
-		p_array[old_count] = std::move(p_item);
+		p_array[old_count] = std::forward<T>(p_item);
 		return old_count;
 	}
 

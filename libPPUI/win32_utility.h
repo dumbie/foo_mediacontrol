@@ -9,6 +9,12 @@ unsigned QueryScreenDPI_Y(HWND wnd = NULL);
 SIZE QueryScreenDPIEx(HWND wnd = NULL);
 SIZE QueryContextDPI(HDC dc);
 
+namespace PP {
+	// Returns drag threshold, in actual pixels (DPI-corrected), for the specified window
+	SIZE queryDragThreshold(HWND wndFor);
+	SIZE queryDragThresholdForDPI(SIZE knownDPI);
+}
+
 void HeaderControl_SetSortIndicator(HWND header, int column, bool isUp);
 
 HINSTANCE GetThisModuleHandle();

@@ -19,3 +19,8 @@
 #include <atlcrack.h>
 
 #include <pfc/pfc.h>
+
+
+#ifndef _UNICODE
+#error seriously?
+#endif

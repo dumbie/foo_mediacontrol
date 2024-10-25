@@ -70,19 +70,24 @@ public:
 	}
 private:
 	double _query(t_uint64 p_val) const {
-		return (double)( p_val - m_start ) / (double) g_query_freq();
+		return (double)( p_val - m_start ) * m_mul;
 	}
 	static t_uint64 g_query() {
 		LARGE_INTEGER val;
 		if (!QueryPerformanceCounter(&val)) throw pfc::exception_not_implemented();
 		return val.QuadPart;
 	}
+	static double init_mul() {
+		return 1.0 / (double)g_query_freq();
+	}
 	static t_uint64 g_query_freq() {
 		LARGE_INTEGER val;
 		if (!QueryPerformanceFrequency(&val)) throw pfc::exception_not_implemented();
+		PFC_ASSERT(val.QuadPart > 0);
 		return val.QuadPart;
 	}
 	t_uint64 m_start;
+	double m_mul = init_mul();
 };
 
 class lores_timer {
@@ -116,6 +121,34 @@ private:
 	}
 	t_uint64 m_start = 0;
 };
+
+class media_timer {
+	typedef DWORD val_t;
+	static val_t _now() { return timeGetTime(); }
+public:
+	void start() {
+		_start(_now());
+	}
+	double query() const {
+		return _query(_now());
+	}
+	double query_reset() {
+		auto now = _now();
+		double ret = _query(now);
+		_start(now);
+		return ret;
+	}
+	pfc::string8 queryString(unsigned precision = 3) const {
+		return pfc::format_time_ex(query(), precision).get_ptr();
+	}
+	static media_timer create_and_start() {
+		media_timer t; t.start(); return t;
+	}
+private:
+	void _start(val_t t) { m_start = t; }
+	double _query(val_t t) const { return (t - m_start) / 1000.0; }
+	val_t m_start = 0;
+};
 }
 #else  // not _WIN32
 
@@ -137,6 +170,7 @@ private:
 };
 
 typedef hires_timer lores_timer;
+typedef hires_timer media_timer;
 
 }
 

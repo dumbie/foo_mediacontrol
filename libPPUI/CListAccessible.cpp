@@ -70,7 +70,7 @@ HRESULT IEnumVARIANT_selection::Clone(IEnumVARIANT **ppEnum)
 	IEnumVARIANT * var;
 	try {
 		var = new IEnumVARIANT_selection(m_data.get_ptr(), m_data.get_size(), m_pos);
-	} catch(std::bad_alloc) {return E_OUTOFMEMORY;}
+	} catch(std::bad_alloc const &) {return E_OUTOFMEMORY;}
 
 	var->AddRef();
 	*ppEnum = var;
@@ -475,7 +475,7 @@ HRESULT IAccessible_CListControl::get_accSelection(VARIANT *pvarChildren)
 			pvarChildren->vt = VT_UNKNOWN;
 			pvarChildren->punkVal = ptr;
 		}
-	} catch(std::bad_alloc) {
+	} catch(std::bad_alloc const &) {
 		return E_OUTOFMEMORY;
 	}
 	return S_OK;

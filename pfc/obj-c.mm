@@ -16,6 +16,7 @@
 #endif
 
 #include "pfc.h"
+#include "sortstring.h"
 
 
 namespace pfc {
@@ -119,6 +120,24 @@ namespace pfc {
             return (int) [str1 localizedCaseInsensitiveCompare: str2];
         }
     }
+    [[noreturn]] void appleThrowException( const char * name, const char * reason ) {
+        @autoreleasepool {
+            @throw [NSException exceptionWithName: [NSString stringWithUTF8String: name] reason:[NSString stringWithUTF8String: reason] userInfo:nil];
+        }
+    }
 
+#ifndef PFC_SORTSTRING_GENERIC
+    sortString_t makeSortString(const char* str) {
+        sortString_t ret;
+        ret.Attach( CFStringCreateWithCString(NULL, str, kCFStringEncodingUTF8) );
+        return ret;
+    }
+    int sortStringCompare(sortString_t const& s1, sortString_t const& s2) {
+        return (int) CFStringCompare(s1.p, s2.p, kCFCompareLocalized | kCFCompareNumerically );
+    }
+    int sortStringCompareI(sortString_t const& s1, sortString_t const& s2) {
+        return (int) CFStringCompare(s1.p, s2.p, kCFCompareLocalized | kCFCompareNumerically | kCFCompareCaseInsensitive );
+    }
+#endif
 }
 #endif

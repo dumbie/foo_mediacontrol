@@ -26,6 +26,8 @@ namespace pfc {
 		template<typename t_what> string_list_impl & operator+=(const t_what & p_source) {pfc::append_t(m_data, p_source); return *this;}
 
 		void set_item(size_t idx, const char* str) { m_data[idx] = str; }
+
+		void remove_mask(bit_array const& mask) { pfc::remove_mask_t(m_data, mask); }
 	private:
 		template<typename t_what> void _append(const t_what & p_source) {
 			const t_size toadd = p_source.get_size(), base = m_data.get_size();

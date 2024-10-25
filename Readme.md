@@ -6,4 +6,4 @@ Adds Windows System Media Transport Controls support to foobar2000.
 2) Extract downloaded file in your foobar2000 directory.
 
 # SDK Version
-2023-09-23
+2024-08-07

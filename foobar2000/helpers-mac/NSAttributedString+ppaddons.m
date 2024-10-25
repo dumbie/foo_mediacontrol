@@ -45,5 +45,7 @@
     
     return attrString;
 }
-
++ (NSAttributedString*) string: (NSString*) text withFont: (NSFont*) font {
+    return [[self alloc] initWithString: text attributes:@{NSFontAttributeName: font}];
+}
 @end

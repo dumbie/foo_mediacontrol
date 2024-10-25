@@ -11,6 +11,12 @@
 
 #include "pfc-fb2k-hooks.h"
 
+#include "sortstring.h"
+
+// StrCmpLogicalW()
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
+
 namespace pfc {
 
 BOOL winFormatSystemErrorMessageImpl(pfc::string_base & p_out,DWORD p_code) {
@@ -515,19 +521,43 @@ namespace pfc {
 	pfc::string8 unicodeNormalizeC(const char* str) {
 		return winUnicodeNormalize(str, NormalizationC);
 	}
-
 	int winNaturalSortCompare(const char* s1, const char* s2) {
-		return winNaturalSortCompare(wideFromUTF8(s1), wideFromUTF8(s2));
+		int ret = winNaturalSortCompareI(s1, s2);
+		if (ret == 0) ret = strcmp(s1, s2);
+		return ret;
 	}
 	int winNaturalSortCompare(const wchar_t* s1, const wchar_t* s2) {
-		return lstrcmp(s1, s2);
+		int ret = winNaturalSortCompareI(s1, s2);
+		if (ret == 0) ret = wcscmp(s1, s2);
+		return ret;
 	}
 	int winNaturalSortCompareI(const char* s1, const char* s2) {
 		return winNaturalSortCompareI(wideFromUTF8(s1), wideFromUTF8(s2));
 	}
 	int winNaturalSortCompareI(const wchar_t* s1, const wchar_t* s2) {
-		return lstrcmpi(s1, s2);
+		return StrCmpLogicalW(s1, s2);
 	}
+
+#ifndef PFC_SORTSTRING_GENERIC
+	sortString_t makeSortString(const char* in) {
+		auto out = std::make_unique<wchar_t[]>(pfc::stringcvt::estimate_utf8_to_wide(in));
+		pfc::stringcvt::convert_utf8_to_wide_unchecked(out.get(), in);
+		return out;
+	}
+	sortString_t makeSortString(const wchar_t* in) {
+		size_t l = wcslen(in) + 1;
+		auto out = std::make_unique<wchar_t[]>(l+1);
+		memcpy(out.get(), in, sizeof(wchar_t) * l);
+		return out;
+	}
+	int sortStringCompare(sortString_t const& s1, sortString_t const& s2) {
+		return winNaturalSortCompare(s1.get(), s2.get());
+	}
+    int sortStringCompareI(sortString_t const& s1, sortString_t const& s2) {
+        return winNaturalSortCompareI(s1.get(), s2.get());
+    }
+#endif
 }
+
 
 #endif // _WIN32

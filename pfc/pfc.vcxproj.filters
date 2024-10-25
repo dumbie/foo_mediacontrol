@@ -357,6 +357,12 @@
     <ClInclude Include="sort2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sortstring.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="event_std.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="pfc-license.txt">

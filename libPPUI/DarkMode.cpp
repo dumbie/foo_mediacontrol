@@ -208,7 +208,7 @@ namespace DarkMode {
 		return val;
 	}
 	bool IsSupportedSystem() {
-		return Win10BuildNumber() >= 17763; // require at least Win10 1809 / Server 2019
+		return Win10BuildNumber() >= 17763 && !IsWine(); // require at least Win10 1809 / Server 2019
 	}
 	bool IsWindows11() {
 		return Win10BuildNumber() >= 22000;
@@ -270,10 +270,18 @@ namespace DarkMode {
 		}
 	}
 
+	void ApplyDarkThemeCtrl2(HWND ctrl, bool bDark, const wchar_t* ThemeID_light, const wchar_t * ThemeID_dark) {
+		if (ctrl == NULL) return;
+		AllowDarkModeForWindow(ctrl, bDark);
+		if (bDark && IsSupportedSystem()) {
+			::SetWindowTheme(ctrl, ThemeID_dark, NULL);
+		} else {
+			::SetWindowTheme(ctrl, ThemeID_light, NULL);
+		}
+	}
+
 	void ApplyDarkThemeCtrl(HWND ctrl, bool bDark, const wchar_t* ThemeID) {
 		if ( ctrl == NULL ) return;
-		// Both ways work
-		// DarkMode_Theme approach doesn't require evil undocumented MS API calls though
 		AllowDarkModeForWindow(ctrl, bDark);
 		if (bDark && IsSupportedSystem()) {
 			std::wstring temp = L"DarkMode_"; temp += ThemeID;

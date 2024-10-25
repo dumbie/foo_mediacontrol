@@ -62,7 +62,8 @@ namespace pfc {
         //! Valid thread object (created and not joined)?
 		bool isActive() const;
         //! Joins the thread: blocks until complete, releases resources. \n
-        //! After waitTillDone() returns, isActive() becomes false.
+        //! After waitTillDone() returns, isActive() becomes false. \n
+		//! No-op if thread not started.
 		void waitTillDone() {close();}
 #ifdef _WIN32
 		void winStart(int priority, DWORD * outThreadID); 

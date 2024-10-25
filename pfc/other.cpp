@@ -244,11 +244,19 @@ void pfc::outputDebugLine(const char * msg) {
 #endif
 }
 
+void pfc::debugBreak() {
+#ifdef _WIN32
+    __debugbreak();
+#else
+    raise(SIGTRAP);
+#endif
+}
+
 #if PFC_DEBUG
 
 #ifdef _WIN32
 void pfc::myassert_win32(const wchar_t * _Message, const wchar_t *_File, unsigned _Line) {
-	if (IsDebuggerPresent()) pfc::crash();
+    if (IsDebuggerPresent()) debugBreak();
 	PFC_DEBUGLOG << "PFC_ASSERT failure: " << _Message;
 	PFC_DEBUGLOG << "PFC_ASSERT location: " << _File << " : " << _Line;
 	_wassert(_Message,_File,_Line);
@@ -258,11 +266,7 @@ void pfc::myassert_win32(const wchar_t * _Message, const wchar_t *_File, unsigne
 void pfc::myassert(const char * _Message, const char *_File, unsigned _Line)
 {
 	PFC_DEBUGLOG << "Assert failure: \"" << _Message << "\" in: " << _File << " line " << _Line;
-#ifdef _WIN32
-    __debugbreak();
-#else
-    raise(SIGTRAP);
-#endif
+    debugBreak();
 }
 #endif
 

@@ -25,7 +25,7 @@ namespace pfc {
 #endif
         }
 
-        char m_data[16];
+        char m_data[16] = {};
     };
 
     class CharDownConvert {

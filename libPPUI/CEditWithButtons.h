@@ -17,6 +17,7 @@ public:
 	static constexpr LPARAM MSG_CHECKCONDITIONS_MAGIC2 = 0x180c2f35;
 
 	BEGIN_MSG_MAP_EX(CEditWithButtons)
+		MSG_WM_CREATE(OnCreate)
 		MSG_WM_SETFONT(OnSetFont)
 		MSG_WM_WINDOWPOSCHANGED(OnPosChanged)
 		MSG_WM_CTLCOLORBTN(OnColorBtn)
@@ -36,6 +37,7 @@ public:
 
 	BOOL SubclassWindow( HWND wnd ) {
 		if (!CEditPPHooks::SubclassWindow(wnd)) return FALSE;
+		m_initialParent = GetParent();
 		this->ModifyStyle(0, WS_CLIPCHILDREN);
 		RefreshButtons();
 		return TRUE;
@@ -59,8 +61,8 @@ public:
 
 	void Invalidate() {
 		__super::Invalidate();
-		for( auto i = m_buttons.begin(); i != m_buttons.end(); ++i ) {
-			if (i->wnd != NULL) i->wnd.Invalidate();
+		for( auto & i : m_buttons ) {
+			if (i.wnd != NULL) i.wnd.Invalidate();
 		}
 	}
 	void SetShellFolderAutoComplete() {
@@ -78,6 +80,11 @@ public:
 	}
 	void RefreshConditions(const wchar_t * newText = nullptr);
 private:
+	int OnCreate(LPCREATESTRUCT lpCreateStruct) {
+		m_initialParent = GetParent();
+		SetMsgHandled(FALSE);
+		return 0;
+	}
 	LRESULT OnCheckConditions( UINT msg, WPARAM wp, LPARAM lp ) {
 		if ( msg == MSG_CHECKCONDITIONS && wp == MSG_CHECKCONDITIONS_MAGIC1 && lp == MSG_CHECKCONDITIONS_MAGIC2 ) {
 			this->RefreshConditions();
@@ -108,9 +115,9 @@ private:
 		return 0;
 	}
 	void OnEnable(BOOL bEnable) {
-		for( auto i = m_buttons.begin(); i != m_buttons.end(); ++ i ) {
-			if ( i->wnd != NULL ) {
-				i->wnd.EnableWindow( bEnable );
+		for( auto & i : m_buttons ) {
+			if ( i.wnd != NULL ) {
+				i.wnd.EnableWindow( bEnable );
 			}
 		}
 		SetMsgHandled(FALSE); 
@@ -189,7 +196,11 @@ private:
 		return (GetKeyState(VK_SHIFT) & 0x8000) ? true : false;
 	}
 	CWindow FindDialog() {
-		return GetParent(); 
+		// Return a window that we can send WM_NEXTDLGCTL to
+		// PROBLEM: There is no clear way of obtaining one - something in our GetParent() hierarchy is usually a dialog, but we don't know which one
+		// Assume our initial parent window to be the right thing to talk to
+		PFC_ASSERT(m_initialParent != NULL);
+		return m_initialParent;
 	}
 	void TabFocusThis(HWND wnd) {
 		FindDialog().PostMessage(WM_NEXTDLGCTL, (WPARAM) wnd, TRUE );
@@ -208,4 +219,5 @@ private:
 	bool m_fixedWidthAuto = false;
 	std::list< Button_t > m_buttons;
 	bool m_hasAutoComplete = false;
+	CWindow m_initialParent;
 };

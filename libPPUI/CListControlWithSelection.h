@@ -220,6 +220,7 @@ private:
 	bool m_prepareDragDropMode = false, m_prepareDragDropModeRightClick = false;
 	bool m_noEnsureVisible = false;
 	CPoint m_prepareDragDropOrigin;
+	bool ShouldBeginDrag(CPoint ptRef, CPoint ptNow) const;
 
 	bool m_ownDDActive = false;
 	bool m_drawThemeText = false;

@@ -5,7 +5,7 @@ namespace pfc {
 	//deprecated
 
 template<typename t_callback>
-inline bool bsearch_inline_t(t_size p_count, const t_callback & p_callback,t_size & p_result)
+inline bool bsearch_inline_t(t_size p_count, t_callback && p_callback,t_size & p_result)
 {
 	t_size max = p_count;
 	t_size min = 0;
@@ -49,7 +49,7 @@ inline bool bsearch_simple_inline_t(t_buffer&& p_buffer, t_size p_count, t_value
 }
 
 template<typename t_buffer,typename t_value>
-inline bool bsearch_simple_inline_t(t_buffer && p_buffer,t_size p_count,t_value const & p_value,t_size & p_result)
+inline bool bsearch_simple_inline_t(t_buffer && p_buffer,t_size p_count,t_value && p_value,t_size & p_result)
 {
 	t_size max = p_count;
 	t_size min = 0;

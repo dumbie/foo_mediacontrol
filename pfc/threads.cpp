@@ -11,7 +11,7 @@
 
 #include "threads.h"
 #include "debug.h"
-#include "ptrholder.h"
+#include <memory>
 
 #include <thread>
 
@@ -180,9 +180,9 @@ namespace pfc {
     }
 	
     void splitThread(thread::arg_t const & arg, std::function<void() > f) {
-		ptrholder_t< std::function<void() > > arg2 ( new std::function<void() >(f) );
+        auto arg2 = std::make_unique<std::function<void()> >(f);
 #ifdef _WIN32
-		HANDLE h = MyBeginThread(winSplitThreadProc, arg2.get_ptr(), NULL, arg.winThreadPriority );
+		HANDLE h = MyBeginThread(winSplitThreadProc, arg2.get(), NULL, arg.winThreadPriority );
 		CloseHandle(h);
 #else
 #ifdef __APPLE__
@@ -194,11 +194,11 @@ namespace pfc {
                 
         attr.apply( arg );
 
-        if (pthread_create(&thread, &attr.a, nixSplitThreadProc, arg2.get_ptr()) != 0) thread::couldNotCreateThread();
+        if (pthread_create(&thread, &attr.a, nixSplitThreadProc, arg2.get()) != 0) thread::couldNotCreateThread();
 
 		pthread_detach(thread);
 #endif
-        arg2.detach();
+        arg2.release();
 	}
 #ifndef __APPLE__
 	// Stub for non Apple

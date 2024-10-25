@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EE47764E-A202-4F85-A767-ABDAB4AFF35F}</ProjectGuid>
     <RootNamespace>foobar2000_sdk_helpers</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -136,13 +137,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>..\..\wtl;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>..\..\wtl;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>..\..\wtl;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
@@ -543,6 +540,7 @@
     <ClInclude Include="cfg_var_import.h" />
     <ClInclude Include="CListControlFb2kColors.h" />
     <ClInclude Include="CmdThread.h" />
+    <ClInclude Include="CModelessDialogMessages.h" />
     <ClInclude Include="CPropVariant.h" />
     <ClInclude Include="CSingleThreadWrapper.h" />
     <ClInclude Include="CTableEditHelper-Legacy.h" />

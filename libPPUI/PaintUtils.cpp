@@ -169,15 +169,22 @@ namespace PaintUtils {
 			}
 		}
 		void DrawTrack2(HDC p_dc, const CRect& rcTrack, const CRect& rcUpdate, COLORREF clrHighlight, COLORREF clrShadow) {
-			CMemoryDC dc(p_dc, rcUpdate);
 			CRect rc(*rcTrack);
-
-			WIN32_OP_D(dc.BitBlt(rcUpdate.left, rcUpdate.top, rcUpdate.Width(), rcUpdate.Height(), p_dc, rcUpdate.left, rcUpdate.top, SRCCOPY));
-
+#if 1
+			CDCHandle dc(p_dc);
+			SelectObjectScope scope(dc, GetStockObject(DC_PEN));
+			dc.SetDCPenColor(clrHighlight);
+			dc.MoveTo(rc.left, rc.bottom);
+			dc.LineTo(rc.right, rc.bottom);
+			dc.LineTo(rc.right, rc.top);
+			dc.SetDCPenColor(clrShadow);
+			dc.LineTo(rc.left, rc.top);
+			dc.LineTo(rc.left, rc.bottom);
+#else
 			try {
 				Gdiplus::Point points[] = { Gdiplus::Point(rc.left, rc.bottom), Gdiplus::Point(rc.right, rc.bottom), Gdiplus::Point(rc.right, rc.top), Gdiplus::Point(rc.left, rc.top)};
 				GdiplusErrorHandler eh;
-				Gdiplus::Graphics graphics(dc);
+				Gdiplus::Graphics graphics(p_dc);
 				eh << graphics.GetLastStatus();
 				Gdiplus::Color c;
 				c.SetFromCOLORREF(clrHighlight);
@@ -194,17 +201,15 @@ namespace PaintUtils {
 				PFC_ASSERT(!"???");
 				// console::print(e.what());
 			}
+#endif
 		}
 		void DrawTrackVolume2(HDC p_dc, const CRect& rcTrack, const CRect& rcUpdate, COLORREF clrHighlight, COLORREF clrShadow) {
-			CMemoryDC dc(p_dc, rcUpdate);
 			CRect rc(rcTrack);
-
-			WIN32_OP_D(dc.BitBlt(rcUpdate.left, rcUpdate.top, rcUpdate.Width(), rcUpdate.Height(), p_dc, rcUpdate.left, rcUpdate.top, SRCCOPY));
 
 			try {
 				Gdiplus::Point points[] = { Gdiplus::Point(rc.left, rc.bottom), Gdiplus::Point(rc.right, rc.bottom), Gdiplus::Point(rc.right, rc.top) };
 				GdiplusErrorHandler eh;
-				Gdiplus::Graphics graphics(dc);
+				Gdiplus::Graphics graphics(p_dc);
 				eh << graphics.GetLastStatus();
 				Gdiplus::Color c;
 				c.SetFromCOLORREF(clrHighlight);

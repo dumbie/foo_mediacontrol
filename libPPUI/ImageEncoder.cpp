@@ -40,9 +40,9 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 
 void ConvertImage(const TCHAR * in, const TCHAR * out, const TCHAR * format, ULONG quality) {
 	GdiplusScope scope;
-	std::unique_ptr< Bitmap > image ( new Bitmap(in) );
-	EH << image->GetLastStatus();
-	SaveImage(&*image, out, format, quality);
+	Bitmap image (in);
+	EH << image.GetLastStatus();
+	SaveImage(&image, out, format, quality);
 }
 
 static void add16clip(uint16_t& v, int d) {

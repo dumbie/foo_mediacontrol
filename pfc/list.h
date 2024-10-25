@@ -394,11 +394,11 @@ public:
 
 	T remove_by_idx(t_size idx)
 	{
-		T ret = m_buffer[idx];
+		T ret = std::move(m_buffer[idx]);
 		t_size n;
 		t_size max = m_buffer.get_size();
 		for(n=idx+1;n<max;n++) {
-			::pfc::move_t(m_buffer[n-1],m_buffer[n]);
+			m_buffer[n - 1] = std::move(m_buffer[n]);
 		}
 		m_buffer.set_size(max-1);
 		return ret;

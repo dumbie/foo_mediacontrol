@@ -82,8 +82,10 @@ namespace pfc {
         
         void set_state( bool state );
 
-        bool is_set( ) {return wait_for(0); }
+        bool is_set( );
         
+        void wait_and_clear() { wait(); set_state(false); }
+        void wait() { wait_for(-1); }
         bool wait_for( double p_timeout_seconds );
         
         static bool g_wait_for( int p_event, double p_timeout_seconds );

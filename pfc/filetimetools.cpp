@@ -51,7 +51,7 @@ static t_filetimestamp ExportSystemTimeLocal(const SYSTEMTIME& st) {
     localtime_r(&t, &Local);
     return pfc::fileTimeUtoW(mktime(&Local));
 }
-static void SystemTimeFromNix(SYSTEMTIME& st, struct tm const& Time) {
+static void SystemTimeFromNix(SYSTEMTIME& st, struct tm const& Time, t_filetimestamp origTS) {
     memset(&st, 0, sizeof(st));
     st.wSecond = Time.tm_sec;
     st.wMinute = Time.tm_min;
@@ -60,13 +60,14 @@ static void SystemTimeFromNix(SYSTEMTIME& st, struct tm const& Time) {
     st.wDayOfWeek = Time.tm_wday;
     st.wMonth = Time.tm_mon + 1;
     st.wYear = Time.tm_year + 1900;
+    st.wMilliseconds = (origTS % filetimestamp_1second_increment) / (filetimestamp_1second_increment/1000);
 }
 
 static bool MakeSystemTime(SYSTEMTIME& st, t_filetimestamp ts) {
     time_t t = (time_t)pfc::fileTimeWtoU(ts);
     struct tm Time;
     if (gmtime_r(&t, &Time) == NULL) return false;
-    SystemTimeFromNix(st, Time);
+    SystemTimeFromNix(st, Time, ts);
     return true;
 }
 
@@ -74,7 +75,7 @@ static bool MakeSystemTimeLocal(SYSTEMTIME& st, t_filetimestamp ts) {
     time_t t = (time_t)pfc::fileTimeWtoU(ts);
     struct tm Time;
     if (localtime_r(&t, &Time) == NULL) return false;
-    SystemTimeFromNix(st, Time);
+    SystemTimeFromNix(st, Time, ts);
     return true;
 }
 
@@ -182,7 +183,7 @@ static t_filetimestamp filetimestamp_from_string_internal(const char* date, bool
         } else {
             return ExportSystemTime(st);
         }
-    } catch (exception_time_error) {
+    } catch (exception_time_error const &) {
         return filetimestamp_invalid;
     }
 }

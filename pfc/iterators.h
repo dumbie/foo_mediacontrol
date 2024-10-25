@@ -53,6 +53,9 @@ namespace pfc {
 
 		bool operator==(const t_self & other) const throw() {return this->m_content == other.m_content;}
 		bool operator!=(const t_self & other) const throw() {return this->m_content != other.m_content;}
+
+		// Returns pointer to referenced item - null if iterator isn't valid
+		const t_item* get() const noexcept { return this->m_content.is_valid() ? &this->m_content->m_content : nullptr; }
 	protected:
 		t_nodeptr m_content;
 	};
@@ -82,6 +85,9 @@ namespace pfc {
 
 		bool operator==(const t_self & other) const throw() {return this->m_content == other.m_content;}
 		bool operator!=(const t_self & other) const throw() {return this->m_content != other.m_content;}
+
+		// Returns pointer to referenced item - null if iterator isn't valid
+		t_item* get() const noexcept { return this->m_content.is_valid() ? &this->m_content->m_content : nullptr; }
 	};
 
 	template<typename item_t> class forward_iterator {

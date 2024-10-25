@@ -1,4 +1,4 @@
-﻿#include "pfc-lite.h"
+#include "pfc-lite.h"
 
 #include "string-conv-lite.h"
 #include "string_conv.h"
@@ -94,133 +94,96 @@ SmartStrStr::SmartStrStr() {
 	InitTwoCharMappings();
 }
 
-#ifdef _WIN32
-static_assert(sizeof(wchar_t) == sizeof(char16_t));
-const wchar_t * SmartStrStr::strStrEndW(const wchar_t * pString, const wchar_t * pSubString, size_t * outFoundAt) const {
-	return reinterpret_cast<const wchar_t*>(strStrEnd16(reinterpret_cast<const char16_t*>(pString), reinterpret_cast<const char16_t*>(pSubString), outFoundAt));
+// == TEMPLATES ==
+template<typename char_t> const char_t * SmartStrStr::matchHere_(const char_t * pString, const char_t * pUserString) const {
+    auto walkData = pString;
+    auto walkUser = pUserString;
+    for (;; ) {
+        if (*walkUser == 0) return walkData;
+
+        uint32_t cData, cUser;
+        size_t dData = pfc::uni_decode_char(walkData, cData);
+        size_t dUser = pfc::uni_decode_char(walkUser, cUser);
+        if (dData == 0 || dUser == 0) return nullptr;
+
+        if (cData != cUser) {
+            bool gotMulti = false;
+            {
+                const char * cDataSubst = m_twoCharMappings.query(cData);
+                if (cDataSubst != nullptr) {
+                    PFC_ASSERT(strlen(cDataSubst) == 2);
+                    if (matchOneChar(cUser, (uint32_t)cDataSubst[0])) {
+                        auto walkUser2 = walkUser + dUser;
+                        uint32_t cUser2;
+                        auto dUser2 = pfc::uni_decode_char(walkUser2, cUser2);
+                        if (matchOneChar(cUser2, (uint32_t)cDataSubst[1])) {
+                            gotMulti = true;
+                            dUser += dUser2;
+                        }
+                    }
+                }
+            }
+            if (!gotMulti) {
+                if (!matchOneChar(cUser, cData)) return nullptr;
+            }
+        }
+
+        walkData += dData;
+        walkUser += dUser;
+    }
+}
+template<typename char_t> bool SmartStrStr::equals_( const char_t * pString, const char_t * pUserString) const {
+    auto p = this->matchHere_(pString, pUserString);
+    if ( p == nullptr ) return false;
+    return *p == 0;
+}
+
+template<typename char_t> const char_t * SmartStrStr::strStrEnd_(const char_t * pString, const char_t * pSubString, size_t * outFoundAt) const {
+    size_t walk = 0;
+    for (;; ) {
+        if (pString[walk] == 0) return nullptr;
+        auto end = matchHere_(pString + walk, pSubString);
+        if (end != nullptr) {
+            if (outFoundAt != nullptr) * outFoundAt = walk;
+            return end;
+        }
+
+        size_t delta = pfc::uni_char_length(pString + walk);
+        if (delta == 0) return nullptr;
+        walk += delta;
+    }
+}
+// == END TEMPLATES ==
+
+const char16_t * SmartStrStr::matchHere16(const char16_t * pString, const char16_t * pUserString) const {
+    return this->matchHere_(pString, pUserString);
+}
+const char * SmartStrStr::matchHere(const char * pString, const char * pUserString) const {
+    return this->matchHere_(pString, pUserString);
 }
 const wchar_t * SmartStrStr::matchHereW(const wchar_t * pString, const wchar_t * pUserString) const {
-	return reinterpret_cast<const wchar_t*>(matchHere16(reinterpret_cast<const char16_t*>(pString), reinterpret_cast<const char16_t*>(pUserString)));
-}
-#endif
-const char16_t * SmartStrStr::matchHere16(const char16_t * pString, const char16_t * pUserString) const {
-	auto walkData = pString;
-	auto walkUser = pUserString;
-	for (;; ) {
-		if (*walkUser == 0) return walkData;
-
-		uint32_t cData, cUser;
-		size_t dData = pfc::utf16_decode_char(walkData, &cData);
-		size_t dUser = pfc::utf16_decode_char(walkUser, &cUser);
-		if (dData == 0 || dUser == 0) return nullptr;
-
-		if (cData != cUser) {
-			bool gotMulti = false;
-			{
-				const char * cDataSubst = m_twoCharMappings.query(cData);
-				if (cDataSubst != nullptr) {
-					PFC_ASSERT(strlen(cDataSubst) == 2);
-					if (matchOneChar(cUser, (uint32_t)cDataSubst[0])) {
-						auto walkUser2 = walkUser + dUser;
-						uint32_t cUser2;
-						auto dUser2 = pfc::utf16_decode_char(walkUser2, &cUser2);
-						if (matchOneChar(cUser2, (uint32_t)cDataSubst[1])) {
-							gotMulti = true;
-							dUser += dUser2;
-						}
-					}
-				}
-			}
-			if (!gotMulti) {
-				if (!matchOneChar(cUser, cData)) return nullptr;
-			}
-		}
-
-		walkData += dData;
-		walkUser += dUser;
-	}
+    return this->matchHere_(pString, pUserString);
 }
 
 bool SmartStrStr::equals(const char * pString, const char * pUserString) const {
-	auto p = matchHere(pString, pUserString);
-	if ( p == nullptr ) return false;
-	return *p == 0;
+    return equals_(pString, pUserString);
 }
 bool SmartStrStr::equals16(const char16_t* pString, const char16_t* pUserString) const {
-	auto p = matchHere16(pString, pUserString);
-	if ( p == nullptr ) return false;
-	return *p == 0;
+    return equals_(pString, pUserString);
 }
-
-const char * SmartStrStr::matchHere(const char * pString, const char * pUserString) const {
-	const char * walkData = pString;
-	const char * walkUser = pUserString;
-	for (;; ) {
-		if (*walkUser == 0) return walkData;
-
-		uint32_t cData, cUser;
-		size_t dData = pfc::utf8_decode_char(walkData, cData);
-		size_t dUser = pfc::utf8_decode_char(walkUser, cUser);
-		if (dData == 0 || dUser == 0) return nullptr;
-
-		if (cData != cUser) {
-			bool gotMulti = false;
-			{
-				const char* cDataSubst = m_twoCharMappings.query(cData);
-				if (cDataSubst != nullptr) {
-					PFC_ASSERT(strlen(cDataSubst) == 2);
-					if (matchOneChar(cUser, (uint32_t)cDataSubst[0])) {
-						auto walkUser2 = walkUser + dUser;
-						uint32_t cUser2;
-						auto dUser2 = pfc::utf8_decode_char(walkUser2, cUser2);
-						if (matchOneChar(cUser2, (uint32_t)cDataSubst[1])) {
-							gotMulti = true;
-							dUser += dUser2;
-						}
-					}
-				}
-			}
-			if (!gotMulti) {
-				if (!matchOneChar(cUser, cData)) return nullptr;
-			}
-		}
-
-		walkData += dData;
-		walkUser += dUser;
-	}
+bool SmartStrStr::equalsW( const wchar_t * pString, const wchar_t * pUserString) const {
+    return equals_(pString, pUserString);
 }
-
 const char * SmartStrStr::strStrEnd(const char * pString, const char * pSubString, size_t * outFoundAt) const {
-	size_t walk = 0;
-	for (;; ) {
-		if (pString[walk] == 0) return nullptr;
-		auto end = matchHere(pString+walk, pSubString);
-		if (end != nullptr) {
-			if ( outFoundAt != nullptr ) * outFoundAt = walk;
-			return end;
-		}
-
-		size_t delta = pfc::utf8_char_len( pString + walk );
-		if ( delta == 0 ) return nullptr;
-		walk += delta;
-	}
+    return strStrEnd_(pString, pSubString, outFoundAt);
 }
 
 const char16_t * SmartStrStr::strStrEnd16(const char16_t * pString, const char16_t * pSubString, size_t * outFoundAt) const {
-	size_t walk = 0;
-	for (;; ) {
-		if (pString[walk] == 0) return nullptr;
-		auto end = matchHere16(pString + walk, pSubString);
-		if (end != nullptr) {
-			if (outFoundAt != nullptr) * outFoundAt = walk;
-			return end;
-		}
+    return strStrEnd_(pString, pSubString, outFoundAt);
+}
 
-		uint32_t dontcare;
-		size_t delta = pfc::utf16_decode_char(pString + walk, & dontcare);
-		if (delta == 0) return nullptr;
-		walk += delta;
-	}
+const wchar_t * SmartStrStr::strStrEndW(const wchar_t * pString, const wchar_t * pSubString, size_t * outFoundAt) const {
+    return strStrEnd_(pString, pSubString, outFoundAt);
 }
 
 static bool wordBeginsHere(const char* base, size_t offset) {
@@ -367,15 +330,16 @@ bool SmartStrStr::testSubString_prefix_subst(const char* str, const char* sub, u
 }
 bool SmartStrStr::testSubstring(const char* str, const char* sub) const {
 #if 1
+    // optimized version for UTF-8
 	unsigned prefix;
-	const size_t skip = pfc::utf8_decode_char(sub, prefix);
+	const size_t skip = pfc::uni_decode_char(sub, prefix);
 	if ( skip == 0 ) return false;
 	sub += skip;
 
 	if (testSubString_prefix_subst(str, sub, prefix)) return true;
 
 	unsigned prefix2;
-	const size_t skip2 = pfc::utf8_decode_char(sub, prefix2);
+	const size_t skip2 = pfc::uni_decode_char(sub, prefix2);
 	if (skip2 > 0 && prefix < 0x10000 && prefix2 < 0x10000) {
 		sub += skip2;
 		auto alt = m_twoCharMappingsReverse.query(prefix | (prefix2 << 16));
@@ -391,6 +355,9 @@ bool SmartStrStr::testSubstring(const char* str, const char* sub) const {
 }
 bool SmartStrStr::testSubstring16(const char16_t* str, const char16_t* sub) const {
 	return this->strStrEnd16(str, sub) != nullptr;
+}
+bool SmartStrStr::testSubstringW( const wchar_t * str, const wchar_t * sub ) const {
+    return this->strStrEndW(str, sub) != nullptr;
 }
 
 SmartStrStr& SmartStrStr::global() {
@@ -429,7 +396,7 @@ void SmartStrFilter::init(const char* ptr, size_t len) {
 
 
 bool SmartStrFilter::test_disregardCounts(const char* src) const {
-	if (m_items.size() == 0) return false;
+	if (m_items.empty()) return false;
 
 	for (auto& walk : m_items) {
 		if (!dc->strStrEnd(src, walk.first.c_str())) return false;
@@ -438,14 +405,14 @@ bool SmartStrFilter::test_disregardCounts(const char* src) const {
 }
 
 bool SmartStrFilter::testWords(const char* src) const {
-	if (m_items.size() == 0) return false;
+	if (m_items.empty()) return false;
 
 	for (auto& walk : m_items) {
-		const t_size count = walk.second;
-		const std::string& str = walk.first;
-		const char* strWalk = src;
-		for (t_size walk = 0; walk < count; ++walk) {
-			const char* next = dc->strStrEndWord(strWalk, str.c_str());
+		const auto count = walk.second;
+		const auto& str = walk.first;
+		const auto* strWalk = src;
+		for (size_t i = 0; i < count; ++i) {
+			auto next = dc->strStrEndWord(strWalk, str.c_str());
 			if (next == nullptr) return false;
 			strWalk = next;
 		}
@@ -455,7 +422,7 @@ bool SmartStrFilter::testWords(const char* src) const {
 
 bool SmartStrFilter::test(const char* src) const {
 
-	if (m_items.size() == 0) return false;
+	if (m_items.empty()) return false;
 
 	// Use the faster routine first, it can't be used to count occurances but nobody really knows about this feature
 	for (auto& walk : m_items) {
@@ -463,12 +430,12 @@ bool SmartStrFilter::test(const char* src) const {
 	}
 	// Have any items where specific number of occurances is wanted?
 	for (auto & walk : m_items) {
-		const t_size count = walk.second;
+		const auto count = walk.second;
 		if (count == 1) continue;
-		const std::string& str = walk.first;
-		const char* strWalk = src;
-		for (t_size walk = 0; walk < count; ++walk) {
-			const char* next = dc->strStrEnd(strWalk, str.c_str());
+		const auto& str = walk.first;
+		const auto* strWalk = src;
+		for (size_t i = 0; i < count; ++i) {
+			auto next = dc->strStrEnd(strWalk, str.c_str());
 			if (next == nullptr) return false;
 			strWalk = next;
 		}
