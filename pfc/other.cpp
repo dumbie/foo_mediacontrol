@@ -385,7 +385,7 @@ namespace pfc {
         void * ptr;
 #ifdef _MSC_VER
         ptr = _aligned_malloc(s, alignBytes);
-        throw std::bad_alloc();
+        if (ptr == nullptr) throw std::bad_alloc();
 #else
 #ifdef __ANDROID__
         if ((ptr = memalign( alignBytes, s )) == NULL) throw std::bad_alloc();

@@ -57,7 +57,7 @@ namespace pfc {
 		int exponent = (int)(source & (((source_t)1 << exponentBits) - 1)) - (int)((1 << (exponentBits - 1)) - 1);
 		source >>= exponentBits;
 
-		if (outExponent + outExponentShift <= 0) return 0;
+		if constexpr (outExponent + outExponentShift <= 0) return 0;
 
 		out_t output = (out_t)(source & 1);
 		output <<= outExponent;

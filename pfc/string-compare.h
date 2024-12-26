@@ -56,7 +56,7 @@ namespace pfc {
 	public:
 		template<typename T1, typename T2>
 		static int compare(T1 const& v1, T2 const& v2) {
-			if (is_same_type<T1, string_part_ref>::value || is_same_type<T2, string_part_ref>::value) {
+			if constexpr (is_same_type<T1, string_part_ref>::value || is_same_type<T2, string_part_ref>::value) {
 				return stringCompareCaseInsensitiveEx(stringToRef(v1), stringToRef(v2));
 			} else {
 				return stringCompareCaseInsensitive(myStringToPtr(v1), myStringToPtr(v2));
@@ -67,7 +67,7 @@ namespace pfc {
 	public:
 		template<typename T1, typename T2>
 		static int compare(T1 const& v1, T2 const& v2) {
-			if (is_same_type<T1, string_part_ref>::value || is_same_type<T2, string_part_ref>::value) {
+			if constexpr (is_same_type<T1, string_part_ref>::value || is_same_type<T2, string_part_ref>::value) {
 				return compare_ex(stringToRef(v1), stringToRef(v2));
 			} else {
 				return stricmp_ascii(myStringToPtr(v1), myStringToPtr(v2));

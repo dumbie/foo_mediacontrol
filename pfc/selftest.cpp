@@ -7,7 +7,7 @@ namespace {
     class foo {};
 }
 
-inline pfc::string_base & operator<<(pfc::string_base & p_fmt,foo p_source) {p_fmt.add_string_("FOO"); return p_fmt;}
+inline pfc::string_base& operator<<(pfc::string_base& p_fmt, foo p_source) { (void)p_source; p_fmt.add_string_("FOO"); return p_fmt; }
 
 namespace {
 	using namespace pfc;

@@ -107,7 +107,7 @@ public:
 	void Attach(HBITMAP bmp) {
 		CSize size; 
 		bool state = CBitmapHandle(bmp).GetSize(size);
-		ATLASSERT(state);
+		ATLASSERT(state); (void)state;
 		Attach(bmp, size);
 	}
 	BOOL Allocate(CSize size, HDC dcCompatible = NULL) {

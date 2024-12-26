@@ -66,6 +66,7 @@ protected:
 	}
 private:
 	LRESULT OnCtlColor(UINT,WPARAM wp,LPARAM lp,BOOL&) {
+		(void)lp;
 		CDCHandle dc((HDC)wp);
 		const COLORREF bkgnd = this->GetSysColorHook(CListControlImpl::colorBackground);
 		dc.SetTextColor(this->GetSysColorHook(CListControlImpl::colorText));

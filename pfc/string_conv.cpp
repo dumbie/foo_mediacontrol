@@ -178,7 +178,7 @@ namespace pfc {
         
 		t_size convert_utf8_to_wide_unchecked(wchar_t * p_out,const char * p_in) {
 			t_size inptr = 0;
-			string_writer_t<wchar_t,false> writer(p_out,~0);
+			string_writer_t<wchar_t,false> writer(p_out,SIZE_MAX);
             
 			while(!writer.is_overrun()) {
 				unsigned newchar = 0;

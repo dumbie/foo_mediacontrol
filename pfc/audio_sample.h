@@ -21,6 +21,8 @@ namespace pfc {
 		static void convert_from_int16(const int16_t* p_source, size_t p_count, double * p_output, double p_scale);
 		static void convert_from_int32(const int32_t* p_source, size_t p_count, float* p_output, float p_scale);
 		static void convert_from_int32(const int32_t* p_source, size_t p_count, double* p_output, double p_scale);
+		static void convert_to_int24(const float* in, size_t count, void* out, float scale);
+		static void convert_to_int24(const double* in, size_t count, void* out, double scale);
 
 		static float calculate_peak(const float * p_source, size_t p_count);
 		static double calculate_peak(const double * p_source, size_t p_count);
@@ -44,10 +46,10 @@ namespace pfc {
 		static void convert(const double* in, double* out, size_t count);
 		static void convert(const double* in, double* out, size_t count, double scale);
 
-		inline static int64_t rint64(float val) { return (int64_t)llroundf(val); }
-		inline static int32_t rint32(float val) { return (int32_t)lroundf(val); }
-		inline static int64_t rint64(double val) { return (int64_t)llround(val); }
-		inline static int32_t rint32(double val) { return (int32_t)lround(val); }
+		inline static int64_t rint64(float val) { return (int64_t)llrint(val); }
+		inline static int32_t rint32(float val) { return (int32_t)lrint(val); }
+		inline static int64_t rint64(double val) { return (int64_t)llrint(val); }
+		inline static int32_t rint32(double val) { return (int32_t)lrint(val); }
 
 		static inline uint64_t time_to_samples(double p_time, uint32_t p_sample_rate) {
 			return (uint64_t)pfc::rint64((double)p_sample_rate * p_time);

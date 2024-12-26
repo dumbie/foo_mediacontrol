@@ -182,7 +182,7 @@ namespace pfc {
 
 
 		void resize_content(t_size p_size) {
-			if (traits_t<t_item>::needs_constructor || traits_t<t_item>::needs_destructor) {
+			if constexpr (traits_t<t_item>::needs_constructor || traits_t<t_item>::needs_destructor) {
 				if (p_size > m_size) {//expand
 					do {
 						__unsafe__in_place_constructor_t(m_buffer[m_size]);
@@ -201,7 +201,7 @@ namespace pfc {
 			PFC_ASSERT( m_size <= m_size_total );
 			PFC_ASSERT( m_size <= p_size );
 			if (m_size_total != p_size) {
-				if (pfc::traits_t<t_item>::realloc_safe) {
+				if constexpr (pfc::traits_t<t_item>::realloc_safe) {
 					m_buffer = pfc::__raw_realloc_t(m_buffer,p_size);
 					m_size_total = p_size;
 				} else if (__raw_realloc_inplace_t(m_buffer,p_size)) {
@@ -267,7 +267,7 @@ namespace pfc {
 
 
 		void resize_content(t_size p_size) {
-			if (traits_t<t_item>::needs_constructor || traits_t<t_item>::needs_destructor) {
+			if constexpr (traits_t<t_item>::needs_constructor || traits_t<t_item>::needs_destructor) {
 				if (p_size > m_size) {//expand
 					do {
 						__unsafe__in_place_constructor_t(m_buffer[m_size]);
@@ -284,7 +284,7 @@ namespace pfc {
 
 		void resize_storage(t_size p_size) {
 			PFC_ASSERT( m_size <= p_size );
-			if (pfc::traits_t<t_item>::realloc_safe) {
+			if constexpr (pfc::traits_t<t_item>::realloc_safe) {
 				m_buffer = pfc::__raw_realloc_t(m_buffer,p_size);
 				//m_size_total = p_size;
 			} else if (__raw_realloc_inplace_t(m_buffer,p_size)) {
@@ -437,7 +437,7 @@ namespace pfc {
 			}
 
 			~alloc() {
-				if (pfc::traits_t<t_item>::needs_destructor) set_size(0);
+				if constexpr (pfc::traits_t<t_item>::needs_destructor) set_size(0);
 			}
 
 			t_size get_size() const {return m_size;}

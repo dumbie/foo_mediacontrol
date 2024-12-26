@@ -310,12 +310,12 @@ t_filetimestamp pfc::filetimestamp_from_string_ISO_8601(const char* dateISO) {
 
         SYSTEMTIME st = {};
         st.wDay = 1; st.wMonth = 1;
-        st.wYear = elems.Y;
-        st.wMonth = elems.M;
-        st.wDay = elems.D;
-        st.wHour = elems.h;
-        st.wMinute = elems.m;
-        st.wSecond = elems.s;
+        st.wYear = (WORD)elems.Y;
+        st.wMonth = (WORD)elems.M;
+        st.wDay = (WORD)elems.D;
+        st.wHour = (WORD)elems.h;
+        st.wMinute = (WORD)elems.m;
+        st.wSecond = (WORD)elems.s;
         st.wMilliseconds = (WORD)floor(elems.sfrac * 1000.f);
 
         if (!st_sanity(st)) throw exception_time_error();

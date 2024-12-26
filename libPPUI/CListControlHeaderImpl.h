@@ -136,8 +136,8 @@ protected:
 	virtual void SetCellCheckState(size_t item, size_t subItem, bool value);
 	virtual bool ToggleSelectedItemsHook(const pfc::bit_array & mask) override;
 
-	virtual bool RenderCellImageTest(size_t item, size_t subItem) const { return false; }
-	virtual void RenderCellImage(size_t item, size_t subItem, CDCHandle, const CRect&) const {}
+	virtual bool RenderCellImageTest(size_t item, size_t subItem) const { (void)item; (void)subItem; return false; }
+	virtual void RenderCellImage(size_t item, size_t subItem, CDCHandle, const CRect&) const { (void)item; (void)subItem; }
 
 	t_uint32 GetOptimalColumnWidth(t_size which, GetOptimalWidth_Cache & cache) const;
 	t_uint32 GetOptimalSubItemWidthSimple(t_size item, t_size subItem) const;

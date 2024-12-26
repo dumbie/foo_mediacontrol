@@ -8,9 +8,15 @@
 #include "DarkMode.h"
 #include <vssym32.h>
 
-enum {
-	lineBelowHeaderCY = 1
-};
+static constexpr int lineBelowHeaderCY = 1;
+
+// Prevent erratic behavior of header control
+static constexpr uint32_t columnWidthSanityLimit = 10000;
+
+static uint32_t columWidthToPixels(uint32_t user) {
+	PFC_ASSERT(user <= CListControlHeaderImpl::columnWidthMax);
+	return user < columnWidthSanityLimit ? user : columnWidthSanityLimit;
+}
 
 static bool testDrawLineBelowHeader() {
 	// Win10
@@ -404,18 +410,19 @@ void CListControlHeaderImpl::GetColumnText(size_t which, pfc::string_base & out)
 	}
 }
 
-void CListControlHeaderImpl::ResizeColumn(t_size index, t_uint32 widthPixels, bool updateView) {
+void CListControlHeaderImpl::ResizeColumn(t_size index, t_uint32 userWidth, bool updateView) {
 	PFC_ASSERT( IsHeaderEnabled() );
 	PFC_ASSERT( index < m_colRuntime.size() );
 	auto& rt = m_colRuntime[index];
-	rt.m_userWidth = widthPixels;
+	rt.m_userWidth = userWidth;
 	if (rt.autoWidth()) {
 		this->ProcessAutoWidth();
 	} else {
+		auto widthPixels = columWidthToPixels(userWidth);
 		rt.m_widthPixels = widthPixels;
 		HDITEM item = {};
 		item.mask = HDI_WIDTH;
-		item.cxy = rt.autoWidth() ? 0 : widthPixels;
+		item.cxy = widthPixels;
 		{ pfc::vartoggle_t<bool> scope(m_ownColumnsChange, true); m_header.SetItem((int)index, &item); }
 		RecalcItemWidth();
 		if (updateView) OnColumnsChanged();
@@ -500,15 +507,19 @@ void CListControlHeaderImpl::AddColumnF( const char * label, float widthF, DWORD
 	}
 	AddColumn( label, w, fmtFlags, update );
 }
-void CListControlHeaderImpl::AddColumn(const char * label, uint32_t width, DWORD fmtFlags,bool update) {
+void CListControlHeaderImpl::AddColumn(const char * label, uint32_t userWidth, DWORD fmtFlags,bool update) {
+	// userWidth is either UINT32_MAX or desired width in pixels
 	PFC_ASSERT(IsWindow());
 	if (! IsHeaderEnabled( ) ) InitializeHeaderCtrl();
+
+	uint32_t widthPixels = 0;
 
 	pfc::stringcvt::string_os_from_utf8 labelOS(label);
 	HDITEM item = {};
 	item.mask = HDI_TEXT | HDI_FORMAT;
-	if ( width != UINT32_MAX ) {
-		item.cxy = width;
+	if ( userWidth <= columnWidthMax ) {
+		widthPixels = columWidthToPixels(userWidth);
+		item.cxy = widthPixels;
 		item.mask |= HDI_WIDTH;
 	}
 	
@@ -518,11 +529,9 @@ void CListControlHeaderImpl::AddColumn(const char * label, uint32_t width, DWORD
 	WIN32_OP_D( (iColumn = m_header.InsertItem(m_header.GetItemCount(),&item) ) >= 0 );
 	colRuntime_t rt;
 	rt.m_text = label;
-	rt.m_userWidth = width;
-	if ( width <= columnWidthMax ) {
-		m_itemWidth += width;
-		rt.m_widthPixels = width;
-	}
+	rt.m_userWidth = userWidth;
+	m_itemWidth += widthPixels;
+	rt.m_widthPixels = widthPixels;
 	m_colRuntime.push_back( std::move(rt) );
 	
 	if (update) OnColumnsChanged();
@@ -820,6 +829,9 @@ void CListControlHeaderImpl::AutoColumnWidths(const pfc::bit_array & mask, bool 
 			}
 		}
 	}
+
+	// Enforce limit
+	for (auto& walk : widths) walk = columWidthToPixels(walk);
 
 	if (expandLast) {
 		uint32_t usedWidth = 0; size_t lastCol = SIZE_MAX;

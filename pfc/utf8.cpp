@@ -85,7 +85,7 @@ namespace pfc {
         if constexpr ( sizeof(wchar_t) == sizeof(char16_t)) {
             return utf16_encode_char(c, reinterpret_cast<char16_t*>(out));
         } else {
-            *out = c; return 1;
+            *out = (wchar_t)c; return 1;
         }
     }
 

@@ -13,26 +13,26 @@ namespace pfc { namespace io { namespace path {
 
 string getFileName(string path) {
 	t_size split = path.lastIndexOfAnyChar(KPathSeparators);
-	if (split == ~0) return path;
+	if (split == SIZE_MAX) return path;
 	else return path.subString(split+1);
 }
 string getFileNameWithoutExtension(string path) {
 	string fn = getFileName(path);
 	t_size split = fn.lastIndexOf('.');
-	if (split == ~0) return fn;
+	if (split == SIZE_MAX) return fn;
 	else return fn.subString(0,split);
 }
 string getFileExtension(string path) {
 	string fn = getFileName(path);
 	t_size split = fn.lastIndexOf('.');
-	if (split == ~0) return "";
+	if (split == SIZE_MAX) return "";
 	else return fn.subString(split);
 }
 string getDirectory(string filePath) {return getParent(filePath);}
 
 string getParent(string filePath) {
 	t_size split = filePath.lastIndexOfAnyChar(KPathSeparators);
-	if (split == ~0) return "";
+	if (split == SIZE_MAX) return "";
 #ifdef _WINDOWS
 	if (split > 0 && getIllegalNameChars().contains(filePath[split-1])) {
 		if (split + 1 < filePath.length()) return filePath.subString(0,split+1);

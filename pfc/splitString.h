@@ -57,7 +57,7 @@ namespace pfc {
 	public:
 		_splitStringSimple_check(char c) : m_char(c) {}
 		t_size operator()(const char* str, t_size len) const {
-			PFC_ASSERT(len > 0);
+			PFC_ASSERT(len > 0); (void)len;
 			if (*str == m_char) return 1;
 			else return 0;
 		}

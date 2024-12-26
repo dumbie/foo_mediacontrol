@@ -87,11 +87,11 @@ public:
 		t_size n,max = get_count();
 		for(n=0;n<max;n++)
 			if (get_item(n)==p_item) return n;
-		return ~0;
+		return SIZE_MAX;
 	}
 
 	template<typename t_search>
-	inline bool have_item(const t_search & p_item) const {return find_item<t_search>(p_item)!=~0;}
+	inline bool have_item(const t_search & p_item) const {return find_item<t_search>(p_item)!=SIZE_MAX;}
 
 
 	template<typename t_compare, typename t_param>
@@ -151,7 +151,7 @@ class list_single_ref_t : public list_base_const_t<T>
 public:
 	list_single_ref_t(const T & p_item,t_size p_count = 1) : m_item(p_item), m_count(p_count) {}
 	t_size get_count() const {return m_count;}
-	void get_item_ex(T& p_out,t_size n) const {PFC_ASSERT(n<m_count); p_out = m_item;}
+	void get_item_ex(T& p_out, t_size n) const { PFC_ASSERT(n < m_count); (void)n;  p_out = m_item; }
 private:
 	const T & m_item;
 	t_size m_count;
@@ -263,9 +263,9 @@ public:
 
 	inline t_size insert_item(const T & item,t_size base) {return insert_items(list_single_ref_t<T>(item),base);}
 	t_size insert_items_repeat(const T & item,t_size num,t_size base) {return insert_items(list_single_ref_t<T>(item,num),base);}
-	inline t_size add_items_repeat(T item,t_size num) {return insert_items_repeat(item,num,~0);}
+	inline t_size add_items_repeat(T item,t_size num) {return insert_items_repeat(item,num,SIZE_MAX);}
 	t_size insert_items_fromptr(const T* source,t_size num,t_size base) {return insert_items(list_const_ptr_t<T>(source,num),base);}
-	inline t_size add_items_fromptr(const T* source,t_size num) {return insert_items_fromptr(source,num,~0);}
+	inline t_size add_items_fromptr(const T* source,t_size num) {return insert_items_fromptr(source,num,SIZE_MAX);}
 
 	inline t_size add_items(const list_base_const_t<T> & items) {return insert_items(items,SIZE_MAX);}
 	inline t_size add_item(const T& item) {return insert_item(item,SIZE_MAX);}
@@ -486,7 +486,7 @@ public:
 	}
 
 	template<typename t_in>
-	void add_items(const t_in & in) {insert_items(in, ~0);}
+	void add_items(const t_in & in) {insert_items(in, SIZE_MAX);}
 
 	void get_items_mask(list_impl_t<T,t_storage> & out,const bit_array & mask)
 	{
@@ -636,11 +636,11 @@ public:
 		t_size n,max = get_size();
 		for(n=0;n<max;n++)
 			if (m_buffer[n]==p_item) return n;
-		return ~0;
+		return SIZE_MAX;
 	}
 
 	template<typename t_search>
-	inline bool have_item(const t_search & p_item) const {return this->template find_item<t_search>(p_item)!=~0;}
+	inline bool have_item(const t_search & p_item) const {return this->template find_item<t_search>(p_item)!=SIZE_MAX;}
 
 	template<typename t_in> t_self & operator=(t_in const & source) {remove_all(); add_items(source); return *this;}
 	template<typename t_in> t_self & operator+=(t_in const & p_source) {add_item(p_source); return *this;}

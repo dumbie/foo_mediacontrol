@@ -259,7 +259,7 @@ namespace pfc {
 		string s(_s);
 		const t_size len = length();
 		const char* content = ptr();
-		for (t_size walk = 0; walk < len; ++walk) {
+		for (t_size walk = base; walk < len; ++walk) {
 			if (s.contains(content[walk])) return walk;
 		}
 		return SIZE_MAX;
@@ -267,7 +267,7 @@ namespace pfc {
 	t_size stringLite::lastIndexOfAnyChar(stringp _s, t_size base) const {
 		string s(_s);
 		const char* content = ptr();
-		for (t_size _walk = length(); _walk > 0; --_walk) {
+		for (t_size _walk = min_t<size_t>(base, length()); _walk > 0; --_walk) {
 			const t_size walk = _walk - 1;
 			if (s.contains(content[walk])) return walk;
 		}

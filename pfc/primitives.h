@@ -117,11 +117,11 @@ namespace pfc {
 	}
 
 	template<typename t_type> void __unsafe__in_place_destructor_t(t_type & p_item) throw() {
-		if (traits_t<t_type>::needs_destructor) try{ p_item.~t_type(); } catch(...) {}
+		if constexpr (traits_t<t_type>::needs_destructor) try{ p_item.~t_type(); } catch(...) {}
 	}
 	
 	template<typename t_type> void __unsafe__in_place_constructor_t(t_type & p_item) {
-		if (traits_t<t_type>::needs_constructor) {
+		if constexpr (traits_t<t_type>::needs_constructor) {
 			t_type * ret = new(&p_item) t_type;
 			PFC_ASSERT(ret == &p_item);
             (void) ret; // suppress warning
@@ -129,14 +129,14 @@ namespace pfc {
 	}
 
 	template<typename t_type> void __unsafe__in_place_destructor_array_t(t_type * p_items, t_size p_count) throw() {
-		if (traits_t<t_type>::needs_destructor) {
+		if constexpr (traits_t<t_type>::needs_destructor) {
 			t_type * walk = p_items;
 			for(t_size n=p_count;n;--n) __unsafe__in_place_destructor_t(*(walk++));
 		}
 	}
 	
 	template<typename t_type> t_type * __unsafe__in_place_constructor_array_t(t_type * p_items,t_size p_count) {
-		if (traits_t<t_type>::needs_constructor) {
+		if constexpr (traits_t<t_type>::needs_constructor) {
 			t_size walkptr = 0;
 			try {
 				for(walkptr=0;walkptr<p_count;++walkptr) __unsafe__in_place_constructor_t(p_items[walkptr]);
@@ -155,7 +155,7 @@ namespace pfc {
 	}
 
 	template<typename t_type,typename t_copy> void __unsafe__in_place_constructor_copy_t(t_type & p_item,const t_copy & p_copyfrom) {
-		if (traits_t<t_type>::needs_constructor) {
+		if constexpr (traits_t<t_type>::needs_constructor) {
 			t_type * ret = new(&p_item) t_type(p_copyfrom);
 			PFC_ASSERT(ret == &p_item);
             (void) ret; // suppress warning
@@ -191,7 +191,7 @@ namespace pfc {
 
 	template<typename t_ret,typename t_param>
 	t_ret * safe_ptr_cast(t_param * p_param) {
-		if (pfc::is_same_type<t_ret,t_param>::value) return p_param;
+		if constexpr (pfc::is_same_type<t_ret,t_param>::value) return p_param;
 		else {
 			if (p_param == NULL) return NULL;
 			else return p_param;
@@ -282,7 +282,7 @@ namespace pfc {
 
 	template<t_size p_size>
 	inline void __unsafe__swap_raw_t(void * p_object1, void * p_object2) {
-		if (p_size % sizeof(t_size) == 0) {
+		if constexpr (p_size % sizeof(t_size) == 0) {
 			swap_multi_t<t_size,p_size/sizeof(t_size)>(reinterpret_cast<t_size*>(p_object1),reinterpret_cast<t_size*>(p_object2));
 		} else {
 			swap_multi_t<t_uint8,p_size>(reinterpret_cast<t_uint8*>(p_object1),reinterpret_cast<t_uint8*>(p_object2));
@@ -291,7 +291,7 @@ namespace pfc {
 
 	template<typename T>
 	inline void swap_t(T & p_item1, T & p_item2) {
-		if (traits_t<T>::realloc_safe) {
+		if constexpr (traits_t<T>::realloc_safe) {
 			__unsafe__swap_raw_t<sizeof(T)>( reinterpret_cast<void*>( &p_item1 ), reinterpret_cast<void*>( &p_item2 ) );
 		} else {
 			T temp( std::move(p_item2) );

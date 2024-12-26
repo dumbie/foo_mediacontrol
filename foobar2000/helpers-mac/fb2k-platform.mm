@@ -1,11 +1,18 @@
 #include "fb2k-platform.h"
+#include "NSFont+pp.h"
 
 namespace fb2k {
     NSString * strToPlatform( const char * s, size_t len ) {
         pfc::string8 temp( s, len );
         return strToPlatform( temp );
     }
-
+    NSString * strToPlatform( const char * arg, NSString * returnIfError ) {
+        if ( arg ) @try {
+            NSString * ret = [NSString stringWithUTF8String: arg];
+            if ( ret ) return ret;
+        } @catch(NSException *) {}
+        return returnIfError;
+    }
     NSString * strToPlatform( const char * s ) {
         return [NSString stringWithUTF8String: s];
     }
@@ -32,6 +39,14 @@ namespace fb2k {
         return nullptr;
     }
 
+    NSURL * urlToPlatform(const char * arg) {
+        pfc::string8 native;
+        if (filesystem::g_get_native_path(arg, native)) {
+            return [NSURL fileURLWithPath: [NSString stringWithUTF8String: native ] ];
+        }
+        return [NSURL URLWithString: [NSString stringWithUTF8String: arg]];
+    }
+
     void openURL( const char * URL ) {
         @autoreleasepool {
             [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: URL]]];
@@ -47,6 +62,41 @@ namespace fb2k {
             return (__bridge NSImage *) img->getNative();
         }
         return nil;
+    }
+    BOOL testFontParams(NSDictionary<NSString*, NSString*> * arg) {
+        return arg[@"font-name"] || arg[@"font-size"];
+    }
+    NSFont * fontFromParams(NSDictionary<NSString*, NSString*> * arg, NSFont * base) {
+        NSString * fontName = arg[@"font-name"];
+        NSString * fontSize = arg[@"font-size"];
+        NSFont * font = nil;
+        if ( fontName && fontSize ) {
+            font = [NSFont fontWithName: fontName size: fontSize.floatValue];
+        } else if ( fontName ) {
+            font = [NSFont fontWithName: fontName size: base ? base.pointSize : NSFont.systemFontSize];
+        } else if ( fontSize ) {
+            if ( base ) {
+                font = [ base fontWithSize: fontSize.floatValue ];
+            } else {
+                font = [NSFont monospacedDigitSystemFontOfSize: fontSize.floatValue weight: NSFontWeightRegular];
+            }
+        }
+        if ( font ) return font;
+        if ( base ) return base;
+        // Reuse shared font object
+        return [NSFont pp_monospacedDigitFont];
+    }
+    void tableViewPrepareForFont( NSTableView * tableView, NSFont * font ) {
+        
+        // Must use NSTableViewRowSizeStyleCustom
+        // Other options either discard our font or break down with multiple cell templates used (autolayout)
+        // Height is fixed anyway, better precalculate it
+        assert( tableView.rowSizeStyle == NSTableViewRowSizeStyleCustom );
+        
+        tableView.rowHeight = tableViewRowHeightForFont(font);
+    }
+    CGFloat tableViewRowHeightForFont( NSFont * f ) {
+        return (CGFloat) round( f.pointSize * 1.5 );
     }
 }
 

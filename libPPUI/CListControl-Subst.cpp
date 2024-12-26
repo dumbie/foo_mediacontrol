@@ -1480,7 +1480,7 @@ namespace {
 		}
 
 		bool GetSubItemText(size_t item, size_t subItem, pfc::string_base& out) const override {
-			PFC_ASSERT(subItem == 0);
+			PFC_ASSERT(subItem == 0); (void)subItem;
 			PFC_ASSERT(item < m_content.size());
 			out = m_content[item].text;
 			return true;

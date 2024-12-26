@@ -20,12 +20,12 @@ namespace pfc {
     
     class mutexBase {
     public:
-        void lock() throw() {pthread_mutex_lock(&obj);}
-        void unlock() throw() {pthread_mutex_unlock(&obj);}
+        void lock() noexcept {pthread_mutex_lock(&obj);}
+        void unlock() noexcept {pthread_mutex_unlock(&obj);}
         
-        void enter() throw() {lock();}
-        void leave() throw() {unlock();}
-        bool tryEnter() throw() {return pthread_mutex_trylock(&obj) == 0; }
+        void enter() noexcept {lock();}
+        void leave() noexcept {unlock();}
+        bool tryEnter() noexcept {return pthread_mutex_trylock(&obj) == 0; }
 
         void create( const pthread_mutexattr_t * attr );
         void create( const mutexAttr & );
@@ -88,10 +88,10 @@ namespace pfc {
         void create( const readWriteLockAttr & );
         void destroy() {pthread_rwlock_destroy( & obj ); }
         
-        void enterRead() {pthread_rwlock_rdlock( &obj ); }
-        void enterWrite() {pthread_rwlock_wrlock( &obj ); }
-        void leaveRead() {pthread_rwlock_unlock( &obj ); }
-        void leaveWrite() {pthread_rwlock_unlock( &obj ); }
+        void enterRead() noexcept {pthread_rwlock_rdlock( &obj ); }
+        void enterWrite() noexcept {pthread_rwlock_wrlock( &obj ); }
+        void leaveRead() noexcept {pthread_rwlock_unlock( &obj ); }
+        void leaveWrite() noexcept {pthread_rwlock_unlock( &obj ); }
     protected:
         readWriteLockBase() {}
         ~readWriteLockBase() {}

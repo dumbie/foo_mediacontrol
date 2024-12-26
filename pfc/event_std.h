@@ -1,7 +1,7 @@
 #pragma once
 
 // Alternate lightweight implementation of pfc::event, with similar method sigantures but no support for multi-event-wait-for-any.
-// It's a safe drop-in replacmeent for the regular event - code trying to use unsupported methods will fail to compile rather than behave incorrectly.
+// It's a safe drop-in replacement for the regular event - code trying to use unsupported methods will fail to compile rather than behave incorrectly.
 
 // Rationale:
 // Mac/Linux multi-wait-capable pipe-backed event is relatively expensive, in terms of CPU, memory and file descriptors opened.

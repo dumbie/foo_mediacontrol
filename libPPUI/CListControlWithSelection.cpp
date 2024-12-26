@@ -1026,7 +1026,7 @@ void CListControlWithSelectionImpl::SelHandleRemoval(const pfc::bit_array & mask
 
 void CListControlWithSelectionImpl::SelHandleInsertion(pfc::bit_array const& mask, size_t oldCount, size_t newCount, bool select) {
 	PFC_ASSERT(newCount == GetItemCount());
-	PFC_ASSERT(oldCount <= newCount);
+	PFC_ASSERT(oldCount <= newCount); (void)oldCount;
 
 	// To behave sanely in single-select mode, we'd have to alter selection of other items from here
 	// Let caller worry and outright deny select requests in modes other than multisel

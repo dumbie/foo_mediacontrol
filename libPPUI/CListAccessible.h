@@ -100,7 +100,7 @@ protected:
 	}
 	size_t AccItemHitTest(CPoint const & pt) const {
 		size_t item;
-		if (!this->ItemFromPoint(pt,item)) return ~0;
+		if (!this->ItemFromPoint(pt,item)) return SIZE_MAX;
 		return item;
 	}
 
@@ -194,7 +194,7 @@ protected:
 
 	CWindow AccGetOtherChildWnd(size_t index) const {return index == 0 ? CWindow(this->GetHeaderCtrl()) : CWindow(NULL) ;}
 	virtual DWORD AccGetOtherRole(size_t index) {return index > 0 ? ROLE_SYSTEM_GROUPING : ROLE_SYSTEM_WINDOW;}//FIXME?
-	virtual bool AccGetOtherDescription(size_t index, pfc::string_base & out) const {return false;}//FIXME??
+	virtual bool AccGetOtherDescription(size_t index, pfc::string_base& out) const { (void)index; (void)out; return false; }//FIXME??
 
 	size_t AccGetOtherCount() const {return 1 + this->GetItemCount();}
 	void AccGetOtherName(size_t index, pfc::string_base & out) const override {
@@ -236,8 +236,8 @@ protected:
 		return SIZE_MAX;
 	}
 	bool AccIsOtherFocusable(size_t index) const {return index > 0;}
-	bool AccGetOtherDefaultAction(size_t index, pfc::string_base & out) const {return false;}
-	bool AccExecuteOtherDefaultAction(size_t index) {return false;}
+	bool AccGetOtherDefaultAction(size_t index, pfc::string_base& out) const { (void)index; (void)out; return false; }
+	bool AccExecuteOtherDefaultAction(size_t index) { (void)index; return false; }
 	bool AccGetOtherRect(size_t index, CRect & out) const {
 		if (index == 0) {
 			CRect rc, client;

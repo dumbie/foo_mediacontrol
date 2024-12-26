@@ -1,11 +1,14 @@
 #include "pfc-lite.h"
 #include "audio_sample.h"
 #include "primitives.h"
+#include "cpuid.h"
 
 
 #if (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || (defined(_M_X64) && !defined(_M_ARM64EC)) || defined(__x86_64__) || defined(__SSE2__)
 #define AUDIO_MATH_SSE
 #include <xmmintrin.h>
+#include <tmmintrin.h> // _mm_shuffle_epi8
+#include <smmintrin.h> // _mm_blend_epi16
 
 #ifndef _mm_loadu_si32
 #define _mm_loadu_si32(p) _mm_cvtsi32_si128(*(unsigned int const*)(p))
@@ -15,18 +18,29 @@
 #endif
 
 #ifdef __AVX__
-#define haveAVX true
 #define allowAVX 1
+#define haveAVX 1
 #elif PFC_HAVE_CPUID
-#include "cpuid.h"
-static const bool haveAVX = pfc::query_cpu_feature_set(pfc::CPU_HAVE_AVX);
 #define allowAVX 1
+static const bool haveAVX = pfc::query_cpu_feature_set(pfc::CPU_HAVE_AVX);
 #else
-#define haveAVX false
 #define allowAVX 0
+#define haveAVX 0
 #endif
 
+#ifdef __SSE4_1__
+#define haveSSE41 true
+#elif PFC_HAVE_CPUID
+static const bool haveSSE41 = pfc::query_cpu_feature_set(pfc::CPU_HAVE_SSE41);
+#else
+#define haveSSE41 false
 #endif
+
+#if allowAVX
+#include <immintrin.h> // _mm256_set1_pd
+#endif
+
+#endif // end SSE
 
 #if defined( __aarch64__ ) || defined( _M_ARM64) || defined( _M_ARM64EC )
 #define AUDIO_MATH_ARM64
@@ -35,6 +49,14 @@ static const bool haveAVX = pfc::query_cpu_feature_set(pfc::CPU_HAVE_AVX);
 #if defined( AUDIO_MATH_ARM64 ) || defined( __ARM_NEON__ )
 #define AUDIO_MATH_NEON
 #include <arm_neon.h>
+
+// No vcvtnq_s32_f32 on ARM32, use vcvtq_s32_f32, close enough
+#ifdef AUDIO_MATH_ARM64
+#define vcvtnq_s32_f32_wrap vcvtnq_s32_f32
+#else
+#define vcvtnq_s32_f32_wrap vcvtq_s32_f32
+#endif
+
 #endif
 
 
@@ -162,8 +184,8 @@ inline static void neon_convert_to_int32(const float * __restrict p_source,t_siz
         float32x4_t f32lo = vld1q_f32( p_source );
         float32x4_t f32hi = vld1q_f32( p_source + 4 );
         
-        int32x4_t lo = vcvtq_s32_f32( vmulq_n_f32(f32lo, p_scale) );
-        int32x4_t hi = vcvtq_s32_f32( vmulq_n_f32(f32hi, p_scale) );
+        int32x4_t lo = vcvtnq_s32_f32_wrap( vmulq_n_f32(f32lo, p_scale) );
+        int32x4_t hi = vcvtnq_s32_f32_wrap( vmulq_n_f32(f32hi, p_scale) );
         
         vst1q_s32(p_output, lo);
         vst1q_s32(p_output+4, hi);
@@ -205,8 +227,8 @@ inline static void neon_convert_to_int16(const float* __restrict p_source,t_size
         float32x4_t f32lo = vld1q_f32( p_source );
         float32x4_t f32hi = vld1q_f32( p_source + 4);
         
-        int32x4_t lo = vcvtq_s32_f32( vmulq_n_f32(f32lo, p_scale) );
-        int32x4_t hi = vcvtq_s32_f32( vmulq_n_f32(f32hi, p_scale) );
+        int32x4_t lo = vcvtnq_s32_f32_wrap( vmulq_n_f32(f32lo, p_scale) );
+        int32x4_t hi = vcvtnq_s32_f32_wrap( vmulq_n_f32(f32hi, p_scale) );
         
         vst1q_s16(&p_output[0], vcombine_s16( vqmovn_s32( lo ), vqmovn_s32( hi ) ) );
         
@@ -251,8 +273,8 @@ inline static void neon_convert_to_int16(const double* __restrict p_source, t_si
         f64lo = vmulq_n_f64(f64lo, p_scale);
         f64hi = vmulq_n_f64(f64hi, p_scale);
 
-        int64x2_t lo64 = vcvtq_s64_f64(f64lo);
-        int64x2_t hi64 = vcvtq_s64_f64(f64hi);
+        int64x2_t lo64 = vcvtnq_s64_f64(f64lo);
+        int64x2_t hi64 = vcvtnq_s64_f64(f64hi);
         
         int32x4_t v32 = vcombine_s32(vqmovn_s64(lo64), vqmovn_s64(hi64));
 
@@ -366,7 +388,7 @@ inline void convert_to_32bit_sse2(const double* p_src, size_t numTotal, t_int32*
         auto i1 = _mm_cvtpd_epi32(v1), i2 = _mm_cvtpd_epi32(v2);
         
 
-        _mm_storeu_si128((__m128i*) p_dst, _mm_unpacklo_epi64(i1, i2)); p_dst += 4;;
+        _mm_storeu_si128((__m128i*) p_dst, _mm_unpacklo_epi64(i1, i2)); p_dst += 4;
     }
 
     for (; rem; --rem) {
@@ -669,9 +691,6 @@ inline void convert_from_int16_avx(const t_int16* p_source, t_size p_count, doub
 
     {
         __m256d muld = _mm256_set1_pd(p_scale);
-        __m128i nulls = _mm_setzero_si128();
-        __m128i delta1 = _mm_set1_epi16((int16_t)0x8000);
-        __m128i delta2 = _mm_set1_epi32((int32_t)0x8000);
 
         for (t_size loop = p_count >> 3; loop; --loop) {
             auto source = _mm_loadu_si128((__m128i*)p_source);
@@ -943,6 +962,225 @@ namespace pfc {
     void audio_math::convert(const double* in, float* out, size_t count, double scale) {
         // optimize me
         noopt_scale(in, count, out, scale);
+    }
+
+
+    typedef char store24_t;
+    static store24_t* store24(store24_t* out, int32_t in) {
+        *(out++) = ((store24_t*)&in)[0];
+        *(out++) = ((store24_t*)&in)[1];
+        *(out++) = ((store24_t*)&in)[2];
+        return out;
+    }
+    static store24_t* store24p(store24_t* out, int32_t in) {
+        *(int32_t*)out = in;
+        return out + 3;
+    }
+
+    static constexpr int32_t INT24_MAX = 0x7FFFFF, INT24_MIN = -0x800000;
+
+    template<typename float_t> void convert_to_int24_noopt(float_t const* in, size_t count, void* out, float_t scale) {
+        if (count == 0) return;
+        --count;
+        auto ptr = reinterpret_cast<store24_t*>(out);
+        constexpr float_t lo = INT24_MIN, hi = INT24_MAX;
+        while (count) {
+            auto vf = *in++ * scale;
+            if (vf < lo) vf = lo;
+            else if (vf > hi) vf = hi;
+            ptr = store24p(ptr, audio_math::rint32(vf));
+            --count;
+        }
+
+        auto vf = *in * scale;
+        if (vf < lo) vf = lo;
+        else if (vf > hi) vf = hi;
+        store24(ptr, audio_math::rint32(vf));
+    }
+#ifdef AUDIO_MATH_SSE
+#if allowAVX
+    static void f64_to_i24_avx(double const* in, size_t n, uint8_t* out, double scale) {
+        const __m128i pi0 = _mm_set_epi8(-128, -128, -128, -128, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0);
+        const __m128i pi1 = _mm_set_epi8(4, 2, 1, 0, -128, -128, -128, -128, 14, 13, 12, 10, 9, 8, 6, 5);
+        const __m128i pi2 = _mm_set_epi8(9, 8, 6, 5, 4, 2, 1, 0, -128, -128, -128, -128, 14, 13, 12, 10);
+        const __m128i pi3 = _mm_set_epi8(14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0, -128, -128, -128, -128);
+        const auto mul = _mm256_set1_pd(scale);
+
+        // PROBLEM: if we want to handle wildly out-of-bounds values, we can't do int clipping!
+        // float clipping is sadly considerably slower than int clipping
+        const auto lo = _mm256_set1_pd(INT24_MIN);
+        const auto hi = _mm256_set1_pd(INT24_MAX);
+
+        while (n >= 4 * 4) {
+            auto f0 = _mm256_mul_pd(_mm256_loadu_pd(in + 0), mul);
+            auto f1 = _mm256_mul_pd(_mm256_loadu_pd(in + 4), mul);
+            auto f2 = _mm256_mul_pd(_mm256_loadu_pd(in + 8), mul);
+            auto f3 = _mm256_mul_pd(_mm256_loadu_pd(in + 12), mul);
+            f0 = _mm256_max_pd(_mm256_min_pd(f0, hi), lo);
+            f1 = _mm256_max_pd(_mm256_min_pd(f1, hi), lo);
+            f2 = _mm256_max_pd(_mm256_min_pd(f2, hi), lo);
+            f3 = _mm256_max_pd(_mm256_min_pd(f3, hi), lo);
+            __m128i w0 = _mm256_cvtpd_epi32(f0);
+            __m128i w1 = _mm256_cvtpd_epi32(f1);
+            __m128i w2 = _mm256_cvtpd_epi32(f2);
+            __m128i w3 = _mm256_cvtpd_epi32(f3);
+
+            // _mm_shuffle_epi8 : SSSE3
+            w0 = _mm_shuffle_epi8(w0, pi0);
+            w1 = _mm_shuffle_epi8(w1, pi1);
+            w2 = _mm_shuffle_epi8(w2, pi2);
+            w3 = _mm_shuffle_epi8(w3, pi3);
+
+            // _mm_blend_epi16 : SSE4.1
+            __m128i u0 = _mm_blend_epi16(w0, w1, 0xC0);
+            __m128i u1 = _mm_blend_epi16(w1, w2, 0xF0);
+            __m128i u2 = _mm_blend_epi16(w2, w3, 0xFC);
+
+            _mm_storeu_si128((__m128i*)(out + 0), u0);
+            _mm_storeu_si128((__m128i*)(out + 16), u1);
+            _mm_storeu_si128((__m128i*)(out + 32), u2);
+
+            in += 4 * 4;
+            out += 16 * 3;
+            n -= 4 * 4;
+        }
+
+        convert_to_int24_noopt(in, n, out, scale);
+    }
+#endif // allowAVX
+    static void f64_to_i24_sse41(double const* in, size_t n, uint8_t* out, double scale) {
+        const __m128i pi0 = _mm_set_epi8(-128, -128, -128, -128, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0);
+        const __m128i pi1 = _mm_set_epi8(4, 2, 1, 0, -128, -128, -128, -128, 14, 13, 12, 10, 9, 8, 6, 5);
+        const __m128i pi2 = _mm_set_epi8(9, 8, 6, 5, 4, 2, 1, 0, -128, -128, -128, -128, 14, 13, 12, 10);
+        const __m128i pi3 = _mm_set_epi8(14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0, -128, -128, -128, -128);
+        const auto mul = _mm_set1_pd(scale);
+
+        // PROBLEM: if we want to handle wildly out-of-bounds values, we can't do int clipping!
+        // float clipping is sadly considerably slower than int clipping
+        const auto lo = _mm_set1_pd(INT24_MIN);
+        const auto hi = _mm_set1_pd(INT24_MAX);
+
+        while (n >= 4 * 4) {
+            auto f0 = _mm_mul_pd(_mm_loadu_pd(in + 0), mul);
+            auto f1 = _mm_mul_pd(_mm_loadu_pd(in + 2), mul);
+            auto f2 = _mm_mul_pd(_mm_loadu_pd(in + 4), mul);
+            auto f3 = _mm_mul_pd(_mm_loadu_pd(in + 6), mul);
+            auto f4 = _mm_mul_pd(_mm_loadu_pd(in + 8), mul);
+            auto f5 = _mm_mul_pd(_mm_loadu_pd(in + 10), mul);
+            auto f6 = _mm_mul_pd(_mm_loadu_pd(in + 12), mul);
+            auto f7 = _mm_mul_pd(_mm_loadu_pd(in + 14), mul);
+            f0 = _mm_max_pd(_mm_min_pd(f0, hi), lo);
+            f1 = _mm_max_pd(_mm_min_pd(f1, hi), lo);
+            f2 = _mm_max_pd(_mm_min_pd(f2, hi), lo);
+            f3 = _mm_max_pd(_mm_min_pd(f3, hi), lo);
+            f4 = _mm_max_pd(_mm_min_pd(f4, hi), lo);
+            f5 = _mm_max_pd(_mm_min_pd(f5, hi), lo);
+            f6 = _mm_max_pd(_mm_min_pd(f6, hi), lo);
+            f7 = _mm_max_pd(_mm_min_pd(f7, hi), lo);
+
+            
+
+            __m128i w0 = _mm_unpacklo_epi64(_mm_cvtpd_epi32(f0), _mm_cvtpd_epi32(f1));
+            __m128i w1 = _mm_unpacklo_epi64(_mm_cvtpd_epi32(f2), _mm_cvtpd_epi32(f3));
+            __m128i w2 = _mm_unpacklo_epi64(_mm_cvtpd_epi32(f4), _mm_cvtpd_epi32(f5));
+            __m128i w3 = _mm_unpacklo_epi64(_mm_cvtpd_epi32(f6), _mm_cvtpd_epi32(f7));
+
+            // _mm_shuffle_epi8 : SSSE3
+            w0 = _mm_shuffle_epi8(w0, pi0);
+            w1 = _mm_shuffle_epi8(w1, pi1);
+            w2 = _mm_shuffle_epi8(w2, pi2);
+            w3 = _mm_shuffle_epi8(w3, pi3);
+
+            // _mm_blend_epi16 : SSE4.1
+            __m128i u0 = _mm_blend_epi16(w0, w1, 0xC0);
+            __m128i u1 = _mm_blend_epi16(w1, w2, 0xF0);
+            __m128i u2 = _mm_blend_epi16(w2, w3, 0xFC);
+
+            _mm_storeu_si128((__m128i*)(out + 0), u0);
+            _mm_storeu_si128((__m128i*)(out + 16), u1);
+            _mm_storeu_si128((__m128i*)(out + 32), u2);
+
+            in += 4 * 4;
+            out += 16 * 3;
+            n -= 4 * 4;
+        }
+
+        convert_to_int24_noopt(in, n, out, scale);
+    }
+    static void f32_to_i24_sse41(float const* in, size_t n, uint8_t* out, float scale) {
+        const __m128i pi0 = _mm_set_epi8(-128, -128, -128, -128, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0);
+        const __m128i pi1 = _mm_set_epi8(4, 2, 1, 0, -128, -128, -128, -128, 14, 13, 12, 10, 9, 8, 6, 5);
+        const __m128i pi2 = _mm_set_epi8(9, 8, 6, 5, 4, 2, 1, 0, -128, -128, -128, -128, 14, 13, 12, 10);
+        const __m128i pi3 = _mm_set_epi8(14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0, -128, -128, -128, -128);
+        const __m128 mul = _mm_set1_ps(scale);
+
+        // PROBLEM: if we want to handle wildly out-of-bounds values, we can't do int clipping!
+        // float clipping is sadly considerably slower than int clipping
+        const auto lo = _mm_set1_ps(INT24_MIN);
+        const auto hi = _mm_set1_ps(INT24_MAX);
+
+        while (n >= 4 * 4) {
+            auto f0 = _mm_mul_ps(_mm_loadu_ps(in + 0), mul);
+            auto f1 = _mm_mul_ps(_mm_loadu_ps(in + 4), mul);
+            auto f2 = _mm_mul_ps(_mm_loadu_ps(in + 8), mul);
+            auto f3 = _mm_mul_ps(_mm_loadu_ps(in + 12), mul);
+            f0 = _mm_min_ps(_mm_max_ps(f0, lo), hi);
+            f1 = _mm_min_ps(_mm_max_ps(f1, lo), hi);
+            f2 = _mm_min_ps(_mm_max_ps(f2, lo), hi);
+            f3 = _mm_min_ps(_mm_max_ps(f3, lo), hi);
+            __m128i w0 = _mm_cvtps_epi32(f0);
+            __m128i w1 = _mm_cvtps_epi32(f1);
+            __m128i w2 = _mm_cvtps_epi32(f2);
+            __m128i w3 = _mm_cvtps_epi32(f3);
+
+            // _mm_shuffle_epi8 : SSSE3
+            w0 = _mm_shuffle_epi8(w0, pi0);
+            w1 = _mm_shuffle_epi8(w1, pi1);
+            w2 = _mm_shuffle_epi8(w2, pi2);
+            w3 = _mm_shuffle_epi8(w3, pi3);
+
+            // _mm_blend_epi16 : SSE4.1
+            __m128i u0 = _mm_blend_epi16(w0, w1, 0xC0);
+            __m128i u1 = _mm_blend_epi16(w1, w2, 0xF0);
+            __m128i u2 = _mm_blend_epi16(w2, w3, 0xFC);
+
+            _mm_storeu_si128((__m128i*)(out + 0), u0);
+            _mm_storeu_si128((__m128i*)(out + 16), u1);
+            _mm_storeu_si128((__m128i*)(out + 32), u2);
+
+            in += 4 * 4;
+            out += 16 * 3;
+            n -= 4 * 4;
+        }
+        
+        convert_to_int24_noopt(in, n, out, scale);
+    }
+
+#endif // AUDIO_MATH_SSE
+
+    void audio_math::convert_to_int24(const float* in, size_t count, void* out, float scale) {
+        scale *= 0x800000;
+        
+#ifdef AUDIO_MATH_SSE
+        if (haveSSE41) {
+            f32_to_i24_sse41(in, count, (uint8_t*)out, scale); return;
+        }
+#endif
+        convert_to_int24_noopt(in, count, out, scale);
+    }
+    void audio_math::convert_to_int24(const double* in, size_t count, void* out, double scale) {
+        scale *= 0x800000;
+#ifdef AUDIO_MATH_SSE
+#if allowAVX
+        if (haveAVX) {
+            f64_to_i24_avx(in, count, (uint8_t*)out, scale); return;
+        }
+#endif // allowAVX
+        if (haveSSE41) {
+            f64_to_i24_sse41(in, count, (uint8_t*)out, scale); return;
+        }
+#endif // AUDIO_MATH_SSE
+        convert_to_int24_noopt(in, count, out, scale);
     }
 
 }

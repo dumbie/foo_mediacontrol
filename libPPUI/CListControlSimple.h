@@ -3,7 +3,7 @@
 // ================================================================================
 // CListControlSimple
 // Simplified CListControl interface; a ready-to-use class that can be instantiated
-// without subclassing.
+// without subclassing or setting callback objects.
 // Use when you don't need advanced features such as buttons or editing.
 // Maintains its own data.
 // ================================================================================
@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <algorithm>
 
 
 class CListControlSimple : public CListControlReadOnly {
@@ -21,8 +22,9 @@ public:
 	// Events
 	std::function<void()> onReordered; // if not set, list reordering is disabled
 	std::function<void()> onRemoved; // if not set, list item removal is disabled
-	std::function<void(size_t)> onItemAction;
-	std::function<void()> onSelChange;
+	std::function<void(size_t)> onItemAction; // optional, handle item double click or enter key 
+	std::function<void()> onSelChange; // optional, handle selectionchange
+	std::function<void(size_t)> onColumnHeaderClick; // optional, handle column header click, if not set sorting will happen
 
 	size_t GetItemCount() const override {
 		return m_lines.size();
@@ -57,9 +59,7 @@ public:
 
 	void RequestReorder( const size_t * order, size_t count) override {
 		if ( onReordered == nullptr ) return;
-		pfc::reorder_t( m_lines, order, count );
-		this->OnItemsReordered( order, count );
-		onReordered();
+		_Reorder(order, count);
 	}
 	void RequestRemoveSelection() override {
 		if (onRemoved == nullptr) return;
@@ -125,15 +125,52 @@ public:
 		this->OnItemsInserted( insertAt, count, false );
 		return insertAt;
 	}
+	void SortBy(size_t column, bool descending) {
+		std::vector<size_t> order; order.resize(m_lines.size());
+		for (size_t walk = 0; walk < order.size(); ++walk) order[walk] = walk;
+		auto pred = [column, descending](const line_t& l1, const line_t& l2) {
+			int ret = pfc::winNaturalSortCompare(l1.at(column), l2.at(column));
+			if (!descending) ret = -ret;
+			return ret > 0;
+		};
+		auto pred_order = [&](size_t i1, size_t i2) {
+			return pred(m_lines[i1], m_lines[i2]);
+		};
+		std::sort(order.begin(), order.end(), pred_order);
+		this->_Reorder(order.data(), order.size());
+		this->SetSortIndicator(column, descending);
+	}
+	void SortBy(size_t column) {
+		HDITEM item = { HDI_FORMAT };
+		if (this->GetHeaderCtrl().GetItem((int)column, &item)) {
+			bool bDescending = (item.fmt & HDF_SORTDOWN) != 0;
+			this->SortBy(column, bDescending);
+		}
+	}
 protected:
 	void OnSelectionChanged(pfc::bit_array const & affected, pfc::bit_array const & status) override {
 		__super::OnSelectionChanged(affected, status);
 		if ( onSelChange ) onSelChange();
 	}
+	void OnColumnHeaderClick(t_size index) {
+		__super::OnColumnHeaderClick(index);
+		if (onColumnHeaderClick) onColumnHeaderClick(index);
+		else this->SortBy(index);
+	}
+	void _Reorder(const size_t* order, size_t count) {
+		pfc::reorder_t(m_lines, order, count);
+		this->OnItemsReordered(order, count);
+		if (onReordered) onReordered();
+	}
 private:
 	struct line_t {
 		std::map<size_t, std::string> text;
 		size_t user = 0;
+		const char* at(size_t i) const {
+			auto iter = text.find(i);
+			if (iter == text.end()) return "";
+			return iter->second.c_str();
+		}
 	};
 	std::vector<line_t> m_lines;
 };

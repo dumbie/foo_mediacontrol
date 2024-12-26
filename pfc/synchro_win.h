@@ -4,18 +4,18 @@ class _critical_section_base {
 protected:
 	CRITICAL_SECTION sec;
 public:
-	_critical_section_base() {}
-	inline void enter() throw() {EnterCriticalSection(&sec);}
-	inline void leave() throw() {LeaveCriticalSection(&sec);}
-	inline void create() throw() {
+	_critical_section_base() = default;
+	inline void enter() noexcept {EnterCriticalSection(&sec);}
+	inline void leave() noexcept {LeaveCriticalSection(&sec);}
+	inline void create() noexcept {
 #ifdef PFC_WINDOWS_DESKTOP_APP
 		InitializeCriticalSection(&sec);
 #else
 		InitializeCriticalSectionEx(&sec,0,0);
 #endif
 	}
-	inline void destroy() throw() {DeleteCriticalSection(&sec);}
-	inline bool tryEnter() throw() { return !!TryEnterCriticalSection(&sec); }
+	inline void destroy() noexcept {DeleteCriticalSection(&sec);}
+	inline bool tryEnter() noexcept { return !!TryEnterCriticalSection(&sec); }
 private:
 	_critical_section_base(const _critical_section_base&) = delete;
 	void operator=(const _critical_section_base&) = delete;
@@ -24,17 +24,17 @@ private:
 // Static-lifetime critical section, no cleanup - valid until process termination
 class critical_section_static : public _critical_section_base {
 public:
-	critical_section_static() {create();}
+	critical_section_static() noexcept {create();}
 #if !PFC_LEAK_STATIC_OBJECTS
-	~critical_section_static() {destroy();}
+	~critical_section_static() noexcept {destroy();}
 #endif
 };
 
 // Regular critical section, intended for any lifetime scopes
 class critical_section : public _critical_section_base {
 public:
-	critical_section() {create();}
-	~critical_section() {destroy();}
+	critical_section() noexcept {create();}
+	~critical_section() noexcept {destroy();}
 };
 
 namespace pfc {
@@ -43,18 +43,18 @@ namespace pfc {
 // Warning, non-recursion proof
 class readWriteLock {
 public:
-	readWriteLock() {}
+	readWriteLock() = default;
 	
-	void enterRead() {
+	void enterRead() noexcept {
 		AcquireSRWLockShared( & theLock );
 	}
-	void enterWrite() {
+	void enterWrite() noexcept {
 		AcquireSRWLockExclusive( & theLock );
 	}
-	void leaveRead() {
+	void leaveRead() noexcept {
 		ReleaseSRWLockShared( & theLock );
 	}
-	void leaveWrite() {
+	void leaveWrite() noexcept {
 		ReleaseSRWLockExclusive( &theLock );
 	}
 

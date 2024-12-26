@@ -112,19 +112,12 @@ profiler_static::~profiler_static()
 		uint64_t ret;
 		GetSystemTimeAsFileTime((FILETIME*)&ret);
 		return ret;
-#else
-        
-#if defined( __APPLE__ ) && defined(TIME_UTC)
-        if (__builtin_available(iOS 13.0, macOS 10.15, *)) {
-            struct timespec ts;
-            timespec_get(&ts, TIME_UTC);
-            return fileTimeUtoW(ts);
-        }
-#endif
-
-        // Generic inaccurate method
-		return fileTimeUtoW(time(NULL));
-#endif
+#else // not _WIN32
+        timespec ts = {};
+        auto status = clock_gettime( CLOCK_REALTIME, &ts);
+        PFC_ASSERT( status == 0 ); (void) status;
+        return fileTimeUtoW(ts);
+#endif // _WIN32 or not
 	}
     
 }

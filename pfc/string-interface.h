@@ -76,8 +76,13 @@ namespace pfc {
 		void truncate_last_char();
 		void truncate_number_suffix();
 
-		bool truncate_eol(t_size start = 0);
-		bool fix_eol(const char* append = " (...)", t_size start = 0);
+        //! Truncates string at first encountered end-of-line mark, starting search from startBytes position, in bytes..
+		bool truncate_eol(t_size startBytes = 0);
+        //! Truncates string at first encountered end-of-line mark, starting search from startBytes position, in bytes.
+        //! Adds append value if string was altered.
+		bool fix_eol(const char* append = " (...)", t_size startBytes = 0);
+        //! Limits string length to the specified value in actual characters.
+        //! That is, multi-byte UTF-8 characters will be counted as one and never broken apart.
 		bool limit_length(t_size length_in_chars, const char* append = " (...)");
 
 		void truncate_filename() { truncate(scan_filename()); }

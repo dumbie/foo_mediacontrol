@@ -515,7 +515,7 @@ string8 format_float(double p_val,unsigned p_width,unsigned p_prec)
 char format_hex_char(unsigned p_val)
 {
 	PFC_ASSERT(p_val < 16);
-	return (p_val < 10) ? p_val + '0' : p_val - 10 + 'A';
+	return (p_val < 10) ? (char)p_val + '0' : (char)p_val - 10 + 'A';
 }
 
 format_int_t format_hex(t_uint64 p_val,unsigned p_width)
@@ -546,7 +546,7 @@ format_int_t format_hex(t_uint64 p_val,unsigned p_width)
 char format_hex_char_lowercase(unsigned p_val)
 {
 	PFC_ASSERT(p_val < 16);
-	return (p_val < 10) ? p_val + '0' : p_val - 10 + 'a';
+	return (p_val < 10) ? (char)p_val + '0' : (char)p_val - 10 + 'a';
 }
 
 format_int_t format_hex_lowercase(t_uint64 p_val,unsigned p_width)
@@ -993,8 +993,8 @@ pfc::string8 format_mask(pfc::bit_array const& mask, size_t n) {
 	pfc::string_formatter ret;
 	mask.for_each(true, 0, n, [&] (size_t idx) {
 		if (!ret.is_empty() ) ret << ", ";
-		ret << n;
-		});
+		ret << idx;
+	});
 	return ret;
 }
 
@@ -1143,7 +1143,7 @@ uint32_t charLower(uint32_t param)
 uint32_t charUpper(uint32_t param)
 {
 	if (param<128) {
-		if (param>='a' && param<='z') param += 'A' - 'a';
+		if (param>='a' && param<='z') param -= (uint32_t)( 'a' - 'A' );
 		return param;
 	}
 #ifdef PFC_WINDOWS_DESKTOP_APP

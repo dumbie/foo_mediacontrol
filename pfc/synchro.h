@@ -11,14 +11,14 @@
 namespace pfc {
     class dummyLock {
     public:
-        void enterRead() {}
-        void enterWrite() {}
-        void leaveRead() {}
-        void leaveWrite() {}
-        void enter() {}
-        void leave() {}
-        void lock() {}
-        void unlock() {}
+        void enterRead() noexcept {}
+        void enterWrite() noexcept {}
+        void leaveRead() noexcept {}
+        void leaveWrite() noexcept {}
+        void enter() noexcept {}
+        void leave() noexcept {}
+        void lock() noexcept {}
+        void unlock() noexcept {}
     };
     
     template<typename mutex_t>
@@ -26,9 +26,9 @@ namespace pfc {
     private:
         typedef mutexScope_<mutex_t> self_t;
     public:
-        mutexScope_( mutex_t * m ) throw() : m_mutex(m) { m_mutex->enter(); }
-        mutexScope_( mutex_t & m ) throw() : m_mutex(&m) { m_mutex->enter(); }
-        ~mutexScope_( ) throw() {m_mutex->leave();}
+        mutexScope_( mutex_t * m ) noexcept : m_mutex(m) { m_mutex->enter(); }
+        mutexScope_( mutex_t & m ) noexcept : m_mutex(&m) { m_mutex->enter(); }
+        ~mutexScope_( ) noexcept {m_mutex->leave();}
     private:
         void operator=( const self_t & ) = delete;
         mutexScope_(const self_t & ) = delete;
@@ -40,21 +40,21 @@ namespace pfc {
     template<typename lock_t>
     class _readWriteLock_scope_read {
     public:
-        _readWriteLock_scope_read( lock_t & lock ) : m_lock( lock ) { m_lock.enterRead(); }
-        ~_readWriteLock_scope_read() {m_lock.leaveRead();}
+        _readWriteLock_scope_read( lock_t & lock ) noexcept : m_lock( lock ) { m_lock.enterRead(); }
+        ~_readWriteLock_scope_read() noexcept {m_lock.leaveRead();}
     private:
-        _readWriteLock_scope_read( const _readWriteLock_scope_read &);
-        void operator=( const _readWriteLock_scope_read &);
+        _readWriteLock_scope_read( const _readWriteLock_scope_read &) = delete;
+        void operator=( const _readWriteLock_scope_read &) = delete;
         lock_t & m_lock;
     };
     template<typename lock_t>
     class _readWriteLock_scope_write {
     public:
-        _readWriteLock_scope_write( lock_t & lock ) : m_lock( lock ) { m_lock.enterWrite(); }
-        ~_readWriteLock_scope_write() {m_lock.leaveWrite();}
+        _readWriteLock_scope_write( lock_t & lock ) noexcept : m_lock( lock ) { m_lock.enterWrite(); }
+        ~_readWriteLock_scope_write() noexcept {m_lock.leaveWrite();}
     private:
-        _readWriteLock_scope_write( const _readWriteLock_scope_write &);
-        void operator=( const _readWriteLock_scope_write &);
+        _readWriteLock_scope_write( const _readWriteLock_scope_write &) = delete;
+        void operator=( const _readWriteLock_scope_write &) = delete;
         lock_t & m_lock;
     };
 }

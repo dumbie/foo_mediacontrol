@@ -197,7 +197,7 @@ namespace pfc {
 #endif
     }
     const char* _stringComparatorCommon::myStringToPtr(string_part_ref) {
-        pfc::crash(); return nullptr;
+        pfc::crash();
     }
 
     int stringCompareCaseInsensitiveEx(string_part_ref s1, string_part_ref s2) {
