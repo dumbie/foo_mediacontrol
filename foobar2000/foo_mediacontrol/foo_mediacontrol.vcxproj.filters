@@ -27,9 +27,6 @@
     <ClCompile Include="media_controls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="media_position.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="monitor_input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,9 +42,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="media_controls.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="media_position.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="monitor_input.h">

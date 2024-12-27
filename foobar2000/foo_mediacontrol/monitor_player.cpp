@@ -60,3 +60,8 @@ void monitor_player::on_playback_pause(bool p_state)
 		media_controls::controls().status_play();
 	}
 }
+
+void monitor_player::on_playback_time(double p_time)
+{
+	media_controls::controls().set_position(p_time);
+}

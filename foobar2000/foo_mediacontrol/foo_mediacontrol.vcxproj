@@ -357,7 +357,6 @@
     <ClCompile Include="initquit.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="media_controls.cpp" />
-    <ClCompile Include="media_position.cpp" />
     <ClCompile Include="monitor_input.cpp" />
     <ClCompile Include="PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -374,7 +373,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="media_controls.h" />
-    <ClInclude Include="media_position.h" />
     <ClInclude Include="monitor_input.h" />
     <ClInclude Include="monitor_player.h" />
     <ClInclude Include="stdafx.h" />
