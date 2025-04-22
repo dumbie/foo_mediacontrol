@@ -550,7 +550,7 @@ void CListControlWithSelectionBase::HandleDragSel(const CPoint & p_pt) {
 			CRgn rgn2 = FrameRectRgn(rcOld);
 			rgn.CombineRgn(rgn2,RGN_OR);
 			rgn.OffsetRgn( - GetViewOffset() );
-			InvalidateRgn(rgn);
+			InvalidateRgn(rgn, FALSE);
 		}
 
 		if (pt != m_selectDragOriginAbs) m_selectDragMoved = true;
@@ -949,7 +949,7 @@ void CListControlWithSelectionImpl::SetGroupFocusByItem(t_size item) {
 	FocusToUpdateRgn(update);
 	m_groupFocus = true; m_focus = item;
 	FocusToUpdateRgn(update);
-	InvalidateRgn(update);
+	InvalidateRgn(update, FALSE);
 
 	
 	CRect header; 
@@ -964,7 +964,7 @@ void CListControlWithSelectionImpl::SetFocusItem(t_size index) {
 	size_t oldFocus = m_focus;
 	m_groupFocus = false; m_focus = index;
 	FocusToUpdateRgn(update);
-	InvalidateRgn(update);
+	InvalidateRgn(update, FALSE);
 	
 	if ( index != SIZE_MAX ) {
 		EnsureVisibleRectAbs(GetItemRectAbs(index));

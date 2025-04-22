@@ -337,7 +337,7 @@ namespace pfc {
 	void stringToLowerHere(string_base& p_out, const char* p_source, t_size p_sourceLen = SIZE_MAX);
 	t_uint32 charLower(t_uint32 param);
 	t_uint32 charUpper(t_uint32 param);
-	char ascii_tolower_lookup(char c);
+	char ascii_tolower_lookup(char c); // ONLY FOR 0..127 LOWER ASCII! NO RANGE CHECK!
 
 
 	class string_base_ref : public string_base {

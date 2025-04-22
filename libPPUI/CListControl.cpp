@@ -851,7 +851,7 @@ void CListControlImpl::UpdateItems(const pfc::bit_array & p_mask) {
 			AddUpdateRect(updateRgn,GetItemRect(walk));
 		}
 		if (found) {
-			InvalidateRgn(updateRgn);
+			InvalidateRgn(updateRgn, FALSE /*NO erasebackground*/);
 		}
 	}
 }
@@ -894,7 +894,7 @@ void CListControlImpl::UpdateItemsAndHeaders(const pfc::bit_array & p_mask) {
 			AddUpdateRect(updateRgn,GetItemRect(walk));
 		}
 		if (found) {
-			InvalidateRgn(updateRgn);
+			InvalidateRgn(updateRgn, FALSE /*NO erasebackground*/);
 		}
 	}
 }
